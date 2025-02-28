@@ -1,0 +1,41 @@
+# Link Package to your ROS2 Workspace
+
+ln ~/git/DalESelfEBot/ur3_localisation ~/ros2_ws/src/ur3_localisation
+
+# Build Package
+
+cd ~/ros2_ws
+colcon build --packages-select ur3_localisation
+source install/setup.bash
+
+# Launch Simulated UR3
+
+ros2 launch ur_robot_driver ur_control.launch.py ur_type:=ur3 use_fake_hardware:=true launch_rviz:=true robot_ip:=0.0.0.0
+
+# Run Localisation Node
+
+ros2 run ur3_localisation localisation_node
+
+## Steps
+# Step 1: Send UR3 to Position 1
+# Step 2: Save Position
+# Step 3: Repeat Steps 1 & 2 for a total of 4 Positions
+# Step 4: Check Results at ~/ros2_ws/ur3_localisation/config/params.yaml
+
+# Publish a set of Joint Angles
+
+ros2 topic pub /scaled_joint_trajectory_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory '
+joint_names: ["shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint", "wrist_1_joint", "wrist_2_joint", "wrist_3_joint"]
+points:
+  - positions: [0.0, 1.57, 1.57, 0.0, 0.0, 0.0]
+    time_from_start: {sec: 3, nanosec: 0}
+' -1
+
+# Save a Position
+
+ros2 topic pub /save_position std_msgs/msg/Empty "{}" -1
+
+# Check Results
+
+cat ~/ros2_ws/ur3_localisation/config/params.yaml
+
