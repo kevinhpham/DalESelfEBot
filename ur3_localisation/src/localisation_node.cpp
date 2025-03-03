@@ -38,9 +38,23 @@ private:
     std::vector<Eigen::Vector3d> positions_;
     std::string save_path_;
 
+    const std::vector<double> joint_offsets = {
+        0.0,  // Joint 1 starts at -1.57, so its offset is +1.57
+        M_PI / 2,   // Joint 2 starts at 0.0, so no offset needed
+        0.0,  // Joint 3 starts at -1.57, so its offset is +1.57
+        0.0,   // Joint 4 starts at 0.0, so no offset needed
+        M_PI / 2,   // Joint 5 starts at 0.0, so no offset needed
+        M_PI / 2    // Joint 6 starts at 0.0, so no offset needed
+    };    
+
+    // **Corrected DH Parameters**: {theta (offset), a, d, alpha}
     const std::vector<std::vector<double>> DH_PARAMS = {
-        {0, 0.0, 0.1519, M_PI / 2}, {-0.24365, 0.0, 0, 0}, {-0.21325, 0.0, 0, 0},
-        {0, 0.0, 0.11235, M_PI / 2}, {0, 0.0, 0.08535, -M_PI / 2}, {0, 0.0, 0.0819, 0}
+        {0.0,         0.0,        0.1519,   M_PI / 2},   // Joint 1
+        {M_PI / 2,    -0.24365,       0.0,          0.0},       // Joint 2
+        {0.0,    -0.21325,       0.0,          0.0},       // Joint 3
+        {0.0,         0.0,    0.11235,   M_PI / 2},      // Joint 4
+        {M_PI / 2,         0.0,    0.08535,  -M_PI / 2},      // Joint 5
+        {M_PI / 2,         0.0,    0.0819,         0.0}        // Joint 6 (End-effector)
     };
 
     Eigen::Matrix4d compute_dh_matrix(double theta, double a, double d, double alpha) {
@@ -59,10 +73,14 @@ private:
         }
         Eigen::Matrix4d T = Eigen::Matrix4d::Identity();
         for (size_t i = 0; i < 6; ++i) {
-            T *= compute_dh_matrix(msg->position[i], DH_PARAMS[i][0], DH_PARAMS[i][1], DH_PARAMS[i][2]);
+            double theta = msg->position[i] + joint_offsets[i];  // Apply offset correction
+            double a = DH_PARAMS[i][1];
+            double d = DH_PARAMS[i][2];
+            double alpha = DH_PARAMS[i][3];
+            T *= compute_dh_matrix(theta, a, d, alpha);
         }
         end_effector_position_ = T.block<3, 1>(0, 3);
-    }
+    }        
 
     void save_position_callback(const std_msgs::msg::Empty::SharedPtr /*msg*/) {
         if (positions_.size() < 4) {
