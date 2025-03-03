@@ -9,10 +9,11 @@ find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(visualization_msgs REQUIRED)
 
 # Executables
 add_executable(localisation_node src/localisation_node.cpp)
-ament_target_dependencies(localisation_node rclcpp std_srvs geometry_msgs yaml-cpp sensor_msgs Eigen3)
+ament_target_dependencies(localisation_node rclcpp std_srvs geometry_msgs yaml-cpp sensor_msgs Eigen3 visualization_msgs)
 
 add_executable(draw_rectangle src/draw_rectangle.cpp)
 ament_target_dependencies(draw_rectangle rclcpp std_srvs geometry_msgs yaml-cpp)
