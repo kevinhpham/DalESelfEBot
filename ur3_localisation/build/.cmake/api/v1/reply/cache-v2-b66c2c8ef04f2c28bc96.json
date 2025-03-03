@@ -1951,7 +1951,19 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/opt/ros/humble/lib/libvisualization_msgs__rosidl_typesupport_fastrtps_cpp.so"
+			"value" : "/opt/ros/humble/lib/libtf2_msgs__rosidl_typesupport_fastrtps_cpp.so"
+		},
+		{
+			"name" : "action_msgs_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "The directory containing a CMake configuration file for action_msgs."
+				}
+			],
+			"type" : "PATH",
+			"value" : "/opt/ros/humble/share/action_msgs/cmake"
 		},
 		{
 			"name" : "ament_cmake_DIR",
@@ -2170,6 +2182,42 @@
 			"value" : "/opt/ros/humble/share/builtin_interfaces/cmake"
 		},
 		{
+			"name" : "class_loader_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "The directory containing a CMake configuration file for class_loader."
+				}
+			],
+			"type" : "PATH",
+			"value" : "/opt/ros/humble/share/class_loader/cmake"
+		},
+		{
+			"name" : "composition_interfaces_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "The directory containing a CMake configuration file for composition_interfaces."
+				}
+			],
+			"type" : "PATH",
+			"value" : "/opt/ros/humble/share/composition_interfaces/cmake"
+		},
+		{
+			"name" : "console_bridge_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "The directory containing a CMake configuration file for console_bridge."
+				}
+			],
+			"type" : "PATH",
+			"value" : "/usr/lib/x86_64-linux-gnu/console_bridge/cmake"
+		},
+		{
 			"name" : "fastcdr_DIR",
 			"properties" : 
 			[
@@ -2266,6 +2314,18 @@
 			"value" : "/opt/ros/humble/share/libyaml_vendor/cmake"
 		},
 		{
+			"name" : "message_filters_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "The directory containing a CMake configuration file for message_filters."
+				}
+			],
+			"type" : "PATH",
+			"value" : "/opt/ros/humble/share/message_filters/cmake"
+		},
+		{
 			"name" : "pkgcfg_lib__OPENSSL_crypto",
 			"properties" : 
 			[
@@ -2320,6 +2380,18 @@
 			],
 			"type" : "PATH",
 			"value" : "/opt/ros/humble/share/rcl/cmake"
+		},
+		{
+			"name" : "rcl_action_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "The directory containing a CMake configuration file for rcl_action."
+				}
+			],
+			"type" : "PATH",
+			"value" : "/opt/ros/humble/share/rcl_action/cmake"
 		},
 		{
 			"name" : "rcl_interfaces_DIR",
@@ -2380,6 +2452,30 @@
 			],
 			"type" : "PATH",
 			"value" : "/opt/ros/humble/share/rclcpp/cmake"
+		},
+		{
+			"name" : "rclcpp_action_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "The directory containing a CMake configuration file for rclcpp_action."
+				}
+			],
+			"type" : "PATH",
+			"value" : "/opt/ros/humble/share/rclcpp_action/cmake"
+		},
+		{
+			"name" : "rclcpp_components_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "The directory containing a CMake configuration file for rclcpp_components."
+				}
+			],
+			"type" : "PATH",
+			"value" : "/opt/ros/humble/share/rclcpp_components/cmake"
 		},
 		{
 			"name" : "rcpputils_DIR",
@@ -2730,6 +2826,42 @@
 			"value" : "/opt/ros/humble/share/std_srvs/cmake"
 		},
 		{
+			"name" : "tf2_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "The directory containing a CMake configuration file for tf2."
+				}
+			],
+			"type" : "PATH",
+			"value" : "/opt/ros/humble/share/tf2/cmake"
+		},
+		{
+			"name" : "tf2_msgs_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "The directory containing a CMake configuration file for tf2_msgs."
+				}
+			],
+			"type" : "PATH",
+			"value" : "/opt/ros/humble/share/tf2_msgs/cmake"
+		},
+		{
+			"name" : "tf2_ros_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "The directory containing a CMake configuration file for tf2_ros."
+				}
+			],
+			"type" : "PATH",
+			"value" : "/opt/ros/humble/share/tf2_ros/cmake"
+		},
+		{
 			"name" : "tracetools_DIR",
 			"properties" : 
 			[
@@ -2740,6 +2872,18 @@
 			],
 			"type" : "PATH",
 			"value" : "/opt/ros/humble/share/tracetools/cmake"
+		},
+		{
+			"name" : "unique_identifier_msgs_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "The directory containing a CMake configuration file for unique_identifier_msgs."
+				}
+			],
+			"type" : "PATH",
+			"value" : "/opt/ros/humble/share/unique_identifier_msgs/cmake"
 		},
 		{
 			"name" : "ur3_localisation_BINARY_DIR",

@@ -10,13 +10,14 @@
 #include <ament_index_cpp/get_package_share_directory.hpp>
 #include <sys/types.h>
 #include <pwd.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_ros/buffer.h>
+#include <geometry_msgs/msg/transform_stamped.hpp>
 
 class UR3Localisation : public rclcpp::Node {
 public:
-    UR3Localisation() : Node("ur3_localisation") {
+    UR3Localisation() : Node("ur3_localisation"), tf_buffer_(this->get_clock()), tf_listener_(tf_buffer_) {
         freedrive_client_ = this->create_client<std_srvs::srv::Trigger>("/io_and_status_controller/set_freedrive");
-        joint_state_subscriber_ = this->create_subscription<sensor_msgs::msg::JointState>(
-            "/joint_states", 10, std::bind(&UR3Localisation::joint_state_callback, this, std::placeholders::_1));
         save_subscriber_ = this->create_subscription<std_msgs::msg::Empty>(
             "/save_position", 10, std::bind(&UR3Localisation::save_position_callback, this, std::placeholders::_1));
         marker_publisher_ = this->create_publisher<visualization_msgs::msg::Marker>("/visualization_marker", 10);
@@ -31,70 +32,46 @@ public:
 
 private:
     rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr freedrive_client_;
-    rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_state_subscriber_;
     rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr save_subscriber_;
     rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_publisher_;
-    Eigen::Vector3d end_effector_position_;
     std::vector<Eigen::Vector3d> positions_;
+    std::vector<Eigen::Quaterniond> orientations_;
     std::string save_path_;
-
-    const std::vector<double> joint_offsets = {
-        0.0,  // Joint 1 starts at -1.57, so its offset is +1.57
-        M_PI / 2,   // Joint 2 starts at 0.0, so no offset needed
-        0.0,  // Joint 3 starts at -1.57, so its offset is +1.57
-        0.0,   // Joint 4 starts at 0.0, so no offset needed
-        M_PI / 2,   // Joint 5 starts at 0.0, so no offset needed
-        M_PI / 2    // Joint 6 starts at 0.0, so no offset needed
-    };    
-
-    // **Corrected DH Parameters**: {theta (offset), a, d, alpha}
-    const std::vector<std::vector<double>> DH_PARAMS = {
-        {0.0,         0.0,        0.1519,   M_PI / 2},   // Joint 1
-        {M_PI / 2,    -0.24365,       0.0,          0.0},       // Joint 2
-        {0.0,    -0.21325,       0.0,          0.0},       // Joint 3
-        {0.0,         0.0,    0.11235,   M_PI / 2},      // Joint 4
-        {M_PI / 2,         0.0,    0.08535,  -M_PI / 2},      // Joint 5
-        {M_PI / 2,         0.0,    0.0819,         0.0}        // Joint 6 (End-effector)
-    };
-
-    Eigen::Matrix4d compute_dh_matrix(double theta, double a, double d, double alpha) {
-        Eigen::Matrix4d T;
-        T << cos(theta), -sin(theta) * cos(alpha), sin(theta) * sin(alpha), a * cos(theta),
-             sin(theta), cos(theta) * cos(alpha), -cos(theta) * sin(alpha), a * sin(theta),
-             0, sin(alpha), cos(alpha), d,
-             0, 0, 0, 1;
-        return T;
-    }
-
-    void joint_state_callback(const sensor_msgs::msg::JointState::SharedPtr msg) {
-        if (msg->position.size() < 6) {
-            RCLCPP_WARN(this->get_logger(), "Joint state message has insufficient values.");
-            return;
-        }
-        Eigen::Matrix4d T = Eigen::Matrix4d::Identity();
-        for (size_t i = 0; i < 6; ++i) {
-            double theta = msg->position[i] + joint_offsets[i];  // Apply offset correction
-            double a = DH_PARAMS[i][1];
-            double d = DH_PARAMS[i][2];
-            double alpha = DH_PARAMS[i][3];
-            T *= compute_dh_matrix(theta, a, d, alpha);
-        }
-        end_effector_position_ = T.block<3, 1>(0, 3);
-    }        
+    tf2_ros::Buffer tf_buffer_;
+    tf2_ros::TransformListener tf_listener_;
 
     void save_position_callback(const std_msgs::msg::Empty::SharedPtr /*msg*/) {
-        if (positions_.size() < 4) {
-            positions_.push_back(end_effector_position_);
-            publish_marker(end_effector_position_, positions_.size(), 0.0, 0.0, 1.0, 0.05);
-            RCLCPP_INFO(this->get_logger(), "Position %ld saved: x=%.3f, y=%.3f, z=%.3f",
-                        positions_.size(), end_effector_position_.x(), end_effector_position_.y(), end_effector_position_.z());
-            if (positions_.size() == 4) {
-                save_positions();
-                publish_plane_marker();
-                disable_freedrive();
+        try {
+            geometry_msgs::msg::TransformStamped transform_stamped;
+            transform_stamped = tf_buffer_.lookupTransform("base_link", "tool0", tf2::TimePointZero);
+            
+            Eigen::Vector3d position(transform_stamped.transform.translation.x,
+                                     transform_stamped.transform.translation.y,
+                                     transform_stamped.transform.translation.z);
+            Eigen::Quaterniond orientation(transform_stamped.transform.rotation.w,
+                                           transform_stamped.transform.rotation.x,
+                                           transform_stamped.transform.rotation.y,
+                                           transform_stamped.transform.rotation.z);
+
+            if (positions_.size() < 4) {
+                positions_.push_back(position);
+                orientations_.push_back(orientation);
+                publish_marker(position, positions_.size(), 0.0, 0.0, 1.0, 0.05);
+
+                RCLCPP_INFO(this->get_logger(), "Position %ld saved: x=%.3f, y=%.3f, z=%.3f",
+                            positions_.size(), position.x(), position.y(), position.z());
+
+                if (positions_.size() == 4) {
+                    save_positions();
+                    publish_plane_marker();
+                    disable_freedrive();
+                }
+            } else {
+                RCLCPP_WARN(this->get_logger(), "All 4 positions have already been saved.");
             }
-        } else {
-            RCLCPP_WARN(this->get_logger(), "All 4 positions have already been saved.");
+        }
+        catch (tf2::TransformException &ex) {
+            RCLCPP_WARN(this->get_logger(), "Could not transform: %s", ex.what());
         }
     }
 
@@ -149,6 +126,10 @@ private:
             yaml_data["corner_positions"][i]["x"] = positions_[i].x();
             yaml_data["corner_positions"][i]["y"] = positions_[i].y();
             yaml_data["corner_positions"][i]["z"] = positions_[i].z();
+            yaml_data["corner_positions"][i]["qx"] = orientations_[i].x();
+            yaml_data["corner_positions"][i]["qy"] = orientations_[i].y();
+            yaml_data["corner_positions"][i]["qz"] = orientations_[i].z();
+            yaml_data["corner_positions"][i]["qw"] = orientations_[i].w();
         }
         std::ofstream fout(save_path_);
         fout << yaml_data;
@@ -156,14 +137,13 @@ private:
         RCLCPP_INFO(this->get_logger(), "Positions saved successfully to %s", save_path_.c_str());
     }
 
-    // Disable freedrive mode
     void disable_freedrive() {
         auto request = std::make_shared<std_srvs::srv::Trigger::Request>();
         freedrive_client_->async_send_request(request);
         RCLCPP_INFO(this->get_logger(), "Freedrive Mode DISABLED.");
     }
 };
-    
+
 int main(int argc, char** argv) {
     rclcpp::init(argc, argv);
     auto node = std::make_shared<UR3Localisation>();

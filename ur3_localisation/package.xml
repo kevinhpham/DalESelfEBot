@@ -16,7 +16,8 @@
   <depend>std_srvs</depend>
   <depend>ament_index_cpp</depend>
   <depend>yaml-cpp</depend>
-  <depend>visualization_msgs</depend>
+  <depend>visualization_msgs</depend>tf2_os
+  <depend>tf2_ros</depend>
 
   <export>
     <build_type>ament_cmake</build_type>
