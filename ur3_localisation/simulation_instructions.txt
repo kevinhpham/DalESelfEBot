@@ -24,10 +24,39 @@ ros2 run ur3_localisation localisation_node
 
 # Publish a set of Joint Angles
 
+# Position 1
+
 ros2 topic pub /scaled_joint_trajectory_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory '
 joint_names: ["shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint", "wrist_1_joint", "wrist_2_joint", "wrist_3_joint"]
 points:
-  - positions: [0.0, 1.57, 1.57, 0.0, 0.0, 0.0]
+  - positions: [-5.0139, 3.9341, 4.3535, 5.8496, 1.5708, 2.8401]
+    time_from_start: {sec: 3, nanosec: 0}
+' -1
+
+# Position 2
+
+ros2 topic pub /scaled_joint_trajectory_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory '
+joint_names: ["shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint", "wrist_1_joint", "wrist_2_joint", "wrist_3_joint"]
+points:
+  - positions: [-0.7507, 3.0953, 6.2830, 4.6719, 1.5881, 0.8194]
+    time_from_start: {sec: 3, nanosec: 0}
+' -1
+
+# Position 3
+
+ros2 topic pub /scaled_joint_trajectory_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory '
+joint_names: ["shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint", "wrist_1_joint", "wrist_2_joint", "wrist_3_joint"]
+points:
+  - positions: [-5.4475, 3.4858, 5.4393, 5.2123, 1.5707, 2.4065]
+    time_from_start: {sec: 3, nanosec: 0}
+' -1
+
+# Position 4
+
+ros2 topic pub /scaled_joint_trajectory_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory '
+joint_names: ["shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint", "wrist_1_joint", "wrist_2_joint", "wrist_3_joint"]
+points:
+  - positions: [-0.3953, 3.4851, 5.4407, 5.2115, 1.5707, 1.1758]
     time_from_start: {sec: 3, nanosec: 0}
 ' -1
 

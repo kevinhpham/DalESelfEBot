@@ -1,18 +1,15 @@
 #include <rclcpp/rclcpp.hpp>
 #include <std_srvs/srv/trigger.hpp>
 #include <std_msgs/msg/empty.hpp>
-#include <sensor_msgs/msg/joint_state.hpp>
-#include <geometry_msgs/msg/pose_stamped.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 #include <yaml-cpp/yaml.h>
 #include <Eigen/Dense>
 #include <fstream>
-#include <ament_index_cpp/get_package_share_directory.hpp>
-#include <sys/types.h>
-#include <pwd.h>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_ros/buffer.h>
 #include <geometry_msgs/msg/transform_stamped.hpp>
+#include <sys/types.h>
+#include <pwd.h>
 
 class UR3Localisation : public rclcpp::Node {
 public:

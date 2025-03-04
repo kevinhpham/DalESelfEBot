@@ -113,10 +113,10 @@ localisation_node: /opt/ros/humble/lib/libsensor_msgs__rosidl_typesupport_fastrt
 localisation_node: /opt/ros/humble/lib/libsensor_msgs__rosidl_typesupport_introspection_c.so
 localisation_node: /opt/ros/humble/lib/libsensor_msgs__rosidl_typesupport_introspection_cpp.so
 localisation_node: /opt/ros/humble/lib/libsensor_msgs__rosidl_typesupport_cpp.so
-localisation_node: /opt/ros/humble/lib/libsensor_msgs__rosidl_generator_py.so
 localisation_node: /opt/ros/humble/lib/libvisualization_msgs__rosidl_typesupport_c.so
-localisation_node: /opt/ros/humble/lib/libsensor_msgs__rosidl_typesupport_c.so
 localisation_node: /opt/ros/humble/lib/libvisualization_msgs__rosidl_generator_c.so
+localisation_node: /opt/ros/humble/lib/libsensor_msgs__rosidl_generator_py.so
+localisation_node: /opt/ros/humble/lib/libsensor_msgs__rosidl_typesupport_c.so
 localisation_node: /opt/ros/humble/lib/libsensor_msgs__rosidl_generator_c.so
 localisation_node: /opt/ros/humble/lib/libtf2_ros.so
 localisation_node: /opt/ros/humble/lib/libmessage_filters.so

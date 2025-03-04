@@ -36,13 +36,13 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 26,
+				"line" : 21,
 				"parent" : 0
 			},
 			{
 				"command" : 5,
 				"file" : 0,
-				"line" : 32,
+				"line" : 26,
 				"parent" : 0
 			},
 			{
@@ -232,18 +232,6 @@
 				"localisation_node"
 			],
 			"targetId" : "localisation_node::@6890427a1f51a3e7e1df",
-			"targetIndex" : 1,
-			"type" : "target"
-		},
-		{
-			"backtrace" : 1,
-			"component" : "Unspecified",
-			"destination" : "lib/ur3_localisation",
-			"paths" : 
-			[
-				"draw_rectangle"
-			],
-			"targetId" : "draw_rectangle::@6890427a1f51a3e7e1df",
 			"targetIndex" : 0,
 			"type" : "target"
 		},

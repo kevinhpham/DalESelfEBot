@@ -16,15 +16,14 @@ ifconfig
 # Launch the Driver using the Robot IP
 ros2 launch ur_robot_driver ur_control.launch.py ur_type:=ur3e robot_ip:=192.168.0.250 launch_rviz:=true
 
-## Now that you are connected ############################################################################################################
+## Now that you are connected ########################################################################################################
 
-## Option 1: Enable Freedrive mode ###################################################################################################
-ros2 topic pub /freedrive_mode_controller/enable_freedrive_mode std_msgs/msg/Bool "{data: true}"
+# Physically move the robot to each position
 
-# Then follow simulation instructions
-... 
+# Save a position
 
-## Option 2: Enable Phsyical Manipulation #############################################################################################
+ros2 topic pub /save_position std_msgs/msg/Empty "{}" -1
 
-# Then follow simulation instructions
-... 
+# Repeat until all 4 Positions are done
+
+# You have now localised the robot to the canvas plane

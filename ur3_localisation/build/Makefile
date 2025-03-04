@@ -210,43 +210,6 @@ localisation_node/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/localisation_node.dir/build.make CMakeFiles/localisation_node.dir/build
 .PHONY : localisation_node/fast
 
-#=============================================================================
-# Target rules for targets named draw_rectangle
-
-# Build rule for target.
-draw_rectangle: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 draw_rectangle
-.PHONY : draw_rectangle
-
-# fast build rule for target.
-draw_rectangle/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/draw_rectangle.dir/build.make CMakeFiles/draw_rectangle.dir/build
-.PHONY : draw_rectangle/fast
-
-src/draw_rectangle.o: src/draw_rectangle.cpp.o
-.PHONY : src/draw_rectangle.o
-
-# target to build an object file
-src/draw_rectangle.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/draw_rectangle.dir/build.make CMakeFiles/draw_rectangle.dir/src/draw_rectangle.cpp.o
-.PHONY : src/draw_rectangle.cpp.o
-
-src/draw_rectangle.i: src/draw_rectangle.cpp.i
-.PHONY : src/draw_rectangle.i
-
-# target to preprocess a source file
-src/draw_rectangle.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/draw_rectangle.dir/build.make CMakeFiles/draw_rectangle.dir/src/draw_rectangle.cpp.i
-.PHONY : src/draw_rectangle.cpp.i
-
-src/draw_rectangle.s: src/draw_rectangle.cpp.s
-.PHONY : src/draw_rectangle.s
-
-# target to generate assembly for a file
-src/draw_rectangle.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/draw_rectangle.dir/build.make CMakeFiles/draw_rectangle.dir/src/draw_rectangle.cpp.s
-.PHONY : src/draw_rectangle.cpp.s
-
 src/localisation_node.o: src/localisation_node.cpp.o
 .PHONY : src/localisation_node.o
 
@@ -286,11 +249,7 @@ help:
 	@echo "... test"
 	@echo "... uninstall"
 	@echo "... ur3_localisation_uninstall"
-	@echo "... draw_rectangle"
 	@echo "... localisation_node"
-	@echo "... src/draw_rectangle.o"
-	@echo "... src/draw_rectangle.i"
-	@echo "... src/draw_rectangle.s"
 	@echo "... src/localisation_node.o"
 	@echo "... src/localisation_node.i"
 	@echo "... src/localisation_node.s"
