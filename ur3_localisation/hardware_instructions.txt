@@ -1,3 +1,30 @@
 # Connect your computer to the UR3/UR3e via Ethernet
 
+# Locate the Robot IP Address - Located at: Three Dashes > About (Top Right Corner)
+
+# Ping the Robot IP
+ping 192.168.0.250
+
 # Acquire your computers IP Address
+ifconfig
+192.168.1.107
+
+# Update the Host IP and Host Name to your IP - Located at: URCaps > External Control (Top Left Corner)
+
+# Turn on the Play Button (Bottom Right Corner)
+
+# Launch the Driver using the Robot IP
+ros2 launch ur_robot_driver ur_control.launch.py ur_type:=ur3e robot_ip:=192.168.0.250 launch_rviz:=true
+
+## Now that you are connected ############################################################################################################
+
+## Option 1: Enable Freedrive mode ###################################################################################################
+ros2 topic pub /freedrive_mode_controller/enable_freedrive_mode std_msgs/msg/Bool "{data: true}"
+
+# Then follow simulation instructions
+... 
+
+## Option 2: Enable Phsyical Manipulation #############################################################################################
+
+# Then follow simulation instructions
+... 
