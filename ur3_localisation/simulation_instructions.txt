@@ -24,39 +24,46 @@ ros2 run ur3_localisation localisation_node
 
 # Publish a set of Joint Angles
 
-# Position 1
+## Position Order
+Bottom-left (closest to robot)
+Bottom-right
+Top-right
+Top-left
+
+## Positions for UR3e
+# Position Bottom-left
 
 ros2 topic pub /scaled_joint_trajectory_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory '
 joint_names: ["shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint", "wrist_1_joint", "wrist_2_joint", "wrist_3_joint"]
 points:
-  - positions: [-5.0139, 3.9341, 4.3535, 5.8496, 1.5708, 2.8401]
+  - positions: [-4.9598, 3.9875, 4.3157, 5.8340, 1.5708, 2.8943]
     time_from_start: {sec: 3, nanosec: 0}
 ' -1
 
-# Position 2
+# Position Bottom-right
 
 ros2 topic pub /scaled_joint_trajectory_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory '
 joint_names: ["shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint", "wrist_1_joint", "wrist_2_joint", "wrist_3_joint"]
 points:
-  - positions: [-0.7507, 3.0953, 6.2830, 4.6719, 1.5881, 0.8194]
+  - positions: [-5.4101, 3.5324, 5.3907, -1.0690, 1.5708, 2.4439]
     time_from_start: {sec: 3, nanosec: 0}
 ' -1
 
-# Position 3
+# Position Top-right
 
 ros2 topic pub /scaled_joint_trajectory_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory '
 joint_names: ["shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint", "wrist_1_joint", "wrist_2_joint", "wrist_3_joint"]
 points:
-  - positions: [-5.4475, 3.4858, 5.4393, 5.2123, 1.5707, 2.4065]
+  - positions: [-0.3579, 3.5326, 5.3903, 5.2143, 1.5708, 1.2129]
     time_from_start: {sec: 3, nanosec: 0}
 ' -1
 
-# Position 4
+# Position Top-left
 
 ros2 topic pub /scaled_joint_trajectory_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory '
 joint_names: ["shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint", "wrist_1_joint", "wrist_2_joint", "wrist_3_joint"]
 points:
-  - positions: [-0.3953, 3.4851, 5.4407, 5.2115, 1.5707, 1.1758]
+  - positions: [5.6966, 3.9877, 4.3152, -0.4489, -4.7124, 0.9841]
     time_from_start: {sec: 3, nanosec: 0}
 ' -1
 
