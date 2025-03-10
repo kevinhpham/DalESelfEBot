@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>ur3_control</name>
+  <version>0.1.0</version>
+  <description>UR3e control package including IK Solver using KDL</description>
+  <maintainer email="jarred.g.deluca@student.uts.edu.au">Jarred Deluca</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>Eigen3</depend>
+  <depend>nlohmann_json</depend>
+  <depend>kdl_parser</depend>
+  <depend>orocos_kdl</depend>
+  <depend>ur3_control_interfaces</depend>
+  <depend>ament_cmake_gtest</depend>
+
+  <test_depend>ament_cmake_gtest</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

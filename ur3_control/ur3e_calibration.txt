@@ -1,0 +1,9 @@
+# Extract Calibration Data
+
+ros2 launch ur_calibration calibration_correction.launch.py \
+  robot_ip:=<192.168.0.250> target_filename:="/home/jarred/git/DalESelfEBot/ur3_control/calibration/ur3e_calibration.yaml"
+
+# Apply Calibration Data
+
+ros2 launch ur_robot_driver ur3e_bringup.launch.py \
+  robot_ip:=<192.168.0.250> kinematics_config:="/home/jarred/git/DalESelfEBot/ur3_control/calibration/ur3e_calibration.yaml"
