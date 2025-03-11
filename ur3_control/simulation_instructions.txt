@@ -30,6 +30,7 @@ ros2 launch ur_robot_driver ur_control.launch.py ur_type:=ur3e use_fake_hardware
 # Launch MoveIt
 
 ros2 launch ur3e_moveit_config demo.launch.py
+ros2 launch ur3e_moveit_config move_group.launch.py
 
 # Launch Control Node
 
