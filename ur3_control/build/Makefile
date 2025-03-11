@@ -198,104 +198,41 @@ ur3_control_uninstall/fast:
 .PHONY : ur3_control_uninstall/fast
 
 #=============================================================================
-# Target rules for targets named ik_solver_kdl
+# Target rules for targets named spline_follower
 
 # Build rule for target.
-ik_solver_kdl: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 ik_solver_kdl
-.PHONY : ik_solver_kdl
+spline_follower: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 spline_follower
+.PHONY : spline_follower
 
 # fast build rule for target.
-ik_solver_kdl/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ik_solver_kdl.dir/build.make CMakeFiles/ik_solver_kdl.dir/build
-.PHONY : ik_solver_kdl/fast
+spline_follower/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/spline_follower.dir/build.make CMakeFiles/spline_follower.dir/build
+.PHONY : spline_follower/fast
 
-#=============================================================================
-# Target rules for targets named test_ik_solver_kdl
-
-# Build rule for target.
-test_ik_solver_kdl: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_ik_solver_kdl
-.PHONY : test_ik_solver_kdl
-
-# fast build rule for target.
-test_ik_solver_kdl/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_ik_solver_kdl.dir/build.make CMakeFiles/test_ik_solver_kdl.dir/build
-.PHONY : test_ik_solver_kdl/fast
-
-#=============================================================================
-# Target rules for targets named gtest
-
-# Build rule for target.
-gtest: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 gtest
-.PHONY : gtest
-
-# fast build rule for target.
-gtest/fast:
-	$(MAKE) $(MAKESILENT) -f gtest/CMakeFiles/gtest.dir/build.make gtest/CMakeFiles/gtest.dir/build
-.PHONY : gtest/fast
-
-#=============================================================================
-# Target rules for targets named gtest_main
-
-# Build rule for target.
-gtest_main: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 gtest_main
-.PHONY : gtest_main
-
-# fast build rule for target.
-gtest_main/fast:
-	$(MAKE) $(MAKESILENT) -f gtest/CMakeFiles/gtest_main.dir/build.make gtest/CMakeFiles/gtest_main.dir/build
-.PHONY : gtest_main/fast
-
-src/ik_solver_kdl.o: src/ik_solver_kdl.cpp.o
-.PHONY : src/ik_solver_kdl.o
+src/spline_follower.o: src/spline_follower.cpp.o
+.PHONY : src/spline_follower.o
 
 # target to build an object file
-src/ik_solver_kdl.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ik_solver_kdl.dir/build.make CMakeFiles/ik_solver_kdl.dir/src/ik_solver_kdl.cpp.o
-.PHONY : src/ik_solver_kdl.cpp.o
+src/spline_follower.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/spline_follower.dir/build.make CMakeFiles/spline_follower.dir/src/spline_follower.cpp.o
+.PHONY : src/spline_follower.cpp.o
 
-src/ik_solver_kdl.i: src/ik_solver_kdl.cpp.i
-.PHONY : src/ik_solver_kdl.i
-
-# target to preprocess a source file
-src/ik_solver_kdl.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ik_solver_kdl.dir/build.make CMakeFiles/ik_solver_kdl.dir/src/ik_solver_kdl.cpp.i
-.PHONY : src/ik_solver_kdl.cpp.i
-
-src/ik_solver_kdl.s: src/ik_solver_kdl.cpp.s
-.PHONY : src/ik_solver_kdl.s
-
-# target to generate assembly for a file
-src/ik_solver_kdl.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ik_solver_kdl.dir/build.make CMakeFiles/ik_solver_kdl.dir/src/ik_solver_kdl.cpp.s
-.PHONY : src/ik_solver_kdl.cpp.s
-
-test/test_ik_solver_kdl.o: test/test_ik_solver_kdl.cpp.o
-.PHONY : test/test_ik_solver_kdl.o
-
-# target to build an object file
-test/test_ik_solver_kdl.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_ik_solver_kdl.dir/build.make CMakeFiles/test_ik_solver_kdl.dir/test/test_ik_solver_kdl.cpp.o
-.PHONY : test/test_ik_solver_kdl.cpp.o
-
-test/test_ik_solver_kdl.i: test/test_ik_solver_kdl.cpp.i
-.PHONY : test/test_ik_solver_kdl.i
+src/spline_follower.i: src/spline_follower.cpp.i
+.PHONY : src/spline_follower.i
 
 # target to preprocess a source file
-test/test_ik_solver_kdl.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_ik_solver_kdl.dir/build.make CMakeFiles/test_ik_solver_kdl.dir/test/test_ik_solver_kdl.cpp.i
-.PHONY : test/test_ik_solver_kdl.cpp.i
+src/spline_follower.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/spline_follower.dir/build.make CMakeFiles/spline_follower.dir/src/spline_follower.cpp.i
+.PHONY : src/spline_follower.cpp.i
 
-test/test_ik_solver_kdl.s: test/test_ik_solver_kdl.cpp.s
-.PHONY : test/test_ik_solver_kdl.s
+src/spline_follower.s: src/spline_follower.cpp.s
+.PHONY : src/spline_follower.s
 
 # target to generate assembly for a file
-test/test_ik_solver_kdl.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_ik_solver_kdl.dir/build.make CMakeFiles/test_ik_solver_kdl.dir/test/test_ik_solver_kdl.cpp.s
-.PHONY : test/test_ik_solver_kdl.cpp.s
+src/spline_follower.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/spline_follower.dir/build.make CMakeFiles/spline_follower.dir/src/spline_follower.cpp.s
+.PHONY : src/spline_follower.cpp.s
 
 # Help Target
 help:
@@ -312,16 +249,10 @@ help:
 	@echo "... test"
 	@echo "... uninstall"
 	@echo "... ur3_control_uninstall"
-	@echo "... gtest"
-	@echo "... gtest_main"
-	@echo "... ik_solver_kdl"
-	@echo "... test_ik_solver_kdl"
-	@echo "... src/ik_solver_kdl.o"
-	@echo "... src/ik_solver_kdl.i"
-	@echo "... src/ik_solver_kdl.s"
-	@echo "... test/test_ik_solver_kdl.o"
-	@echo "... test/test_ik_solver_kdl.i"
-	@echo "... test/test_ik_solver_kdl.s"
+	@echo "... spline_follower"
+	@echo "... src/spline_follower.o"
+	@echo "... src/spline_follower.i"
+	@echo "... src/spline_follower.s"
 .PHONY : help
 
 

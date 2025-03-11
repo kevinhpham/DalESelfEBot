@@ -1,1 +1,1 @@
-rclcpp;Eigen3;nlohmann_json;kdl_parser;orocos_kdl;ur3_control_interfaces;ament_cmake_gtest
+rclcpp;Eigen3;nlohmann_json;moveit_ros_planning_interface;moveit_ros_planning;moveit_ros_move_group;moveit_core;moveit_visual_tools;ros2launch;tf2_ros

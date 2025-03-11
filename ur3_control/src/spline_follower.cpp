@@ -1,120 +1,123 @@
 #include <rclcpp/rclcpp.hpp>
-#include <trajectory_msgs/msg/joint_trajectory.hpp>
-#include <trajectory_msgs/msg/joint_trajectory_point.hpp>
-#include <builtin_interfaces/msg/duration.hpp>
+#include <moveit/move_group_interface/move_group_interface.h>
+#include <moveit/planning_scene_interface/planning_scene_interface.h>
+#include <moveit_msgs/msg/display_trajectory.hpp>
 #include <geometry_msgs/msg/pose.hpp>
-#include <Eigen/Geometry>
-#include <vector>
-#include <fstream>
 #include <nlohmann/json.hpp>
-#include "trajectory_utils.hpp"
-#include "ik_solver_kdl.hpp"  // Include the KDL IK solver
+#include <fstream>
+#include <vector>
 
-using namespace std;
 using json = nlohmann::json;
+using namespace std::chrono_literals;
 
 class SplineFollower : public rclcpp::Node {
 public:
-    SplineFollower() : Node("spline_follower"), ik_solver_("/path/to/ur3e.urdf") {
-        trajectory_pub_ = this->create_publisher<trajectory_msgs::msg::JointTrajectory>(
-            "/scaled_joint_trajectory_controller/joint_trajectory", 10);
-        loadSplines();
+    SplineFollower() : Node("spline_follower") {
+        RCLCPP_INFO(this->get_logger(), "SplineFollower node created.");
     }
 
-    void startDrawing() {
-        if (!ik_solver_.isInitialized()) {
-            RCLCPP_ERROR(this->get_logger(), "IK Solver not initialized correctly!");
+    void on_activate() {
+        // Now we safely call shared_from_this() after the node is fully constructed
+        auto node_shared_ptr = shared_from_this();
+        move_group_ = std::make_shared<moveit::planning_interface::MoveGroupInterface>(
+            node_shared_ptr, "manipulator");
+
+        RCLCPP_INFO(this->get_logger(), "MoveGroupInterface initialized.");
+        
+        move_group_->setPlannerId("RRTConnectkConfigDefault");
+        move_group_->setMaxVelocityScalingFactor(1.0);
+        move_group_->setMaxAccelerationScalingFactor(1.0);
+
+        if (!loadSplines()) {
+            RCLCPP_ERROR(this->get_logger(), "Failed to load splines. Exiting...");
             return;
         }
-
-        auto splines = spline_data_["splines"];
-        if (splines.empty()) {
-            RCLCPP_ERROR(this->get_logger(), "No splines found in JSON!");
-            return;
-        }
-
-        std::vector<double> first_waypoint = computeInverseKinematics(splines[0]["waypoints"][0].get<std::vector<double>>());
-
-        moveToAboveStartPosition(first_waypoint);
-        moveToFirstWaypoint(first_waypoint);
-
-        for (size_t i = 0; i < splines.size() - 1; ++i) {
-            executeSpline(splines[i]["waypoints"].get<std::vector<std::vector<double>>>());
-            liftAndMove(splines[i]["waypoints"].back(), splines[i + 1]["waypoints"].front());
-        }
-
-        executeSpline(splines.back()["waypoints"].get<std::vector<std::vector<double>>>());
+        followSplines();
     }
 
 private:
-    rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr trajectory_pub_;
+    std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group_;
     json spline_data_;
-    IKSolverKDL ik_solver_;  // Use KDL-based inverse kinematics solver
 
-    void loadSplines() {
-        ifstream file("config/drawing_path.json");
+    bool loadSplines() {
+        std::ifstream file("/home/jarred/git/DalESelfEBot/ur3_control/config/drawing_path.json");
+        if (!file) {
+            RCLCPP_ERROR(this->get_logger(), "Could not open spline JSON file.");
+            return false;
+        }
+
         file >> spline_data_;
-    }
-
-    std::vector<double> computeInverseKinematics(const std::vector<double>& cartesian_position) {
-        std::vector<double> joint_positions = ik_solver_.computeInverseKinematics(cartesian_position);
-        if (joint_positions.empty()) {
-            RCLCPP_ERROR(this->get_logger(), "Failed to compute IK solution");
+        if (spline_data_["splines"].empty()) {
+            RCLCPP_ERROR(this->get_logger(), "No splines found in JSON!");
+            return false;
         }
-        return joint_positions;
+
+        RCLCPP_INFO(this->get_logger(), "Loaded %lu splines.", spline_data_["splines"].size());
+        return true;
     }
 
-    void moveToAboveStartPosition(const std::vector<double>& first_waypoint) {
-        std::vector<double> above_position = first_waypoint;
-        above_position[2] += 0.05;
-        executeSpline({above_position});
-    }
+    void followSplines() {
+        for (const auto& spline : spline_data_["splines"]) {
+            std::vector<geometry_msgs::msg::Pose> waypoints;
 
-    void moveToFirstWaypoint(const std::vector<double>& first_waypoint) {
-        executeSpline({first_waypoint});
-    }
+            for (const auto& waypoint : spline["waypoints"]) {
+                if (waypoint.size() < 3) {
+                    RCLCPP_WARN(this->get_logger(), "Skipping invalid waypoint.");
+                    continue;
+                }
 
-    void liftAndMove(const std::vector<double>& start_pos, const std::vector<double>& end_pos) {
-        std::vector<double> up_position = start_pos;
-        up_position[2] += 0.05;
-        std::vector<double> down_position = end_pos;
-        down_position[2] += 0.05;
+                geometry_msgs::msg::Pose pose;
+                pose.position.x = waypoint[0];
+                pose.position.y = waypoint[1];
+                pose.position.z = waypoint[2];
 
-        executeSpline({up_position, down_position});
-        executeSpline({down_position, end_pos});
-    }
+                // Set a fixed orientation (UR3e TCP pointing downwards)
+                pose.orientation.x = 0.0;
+                pose.orientation.y = 1.0;
+                pose.orientation.z = 0.0;
+                pose.orientation.w = 0.0;
 
-    void executeSpline(const std::vector<std::vector<double>>& waypoints) {
-        trajectory_msgs::msg::JointTrajectory traj_msg;
-        traj_msg.joint_names = {"shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint",
-                                "wrist_1_joint", "wrist_2_joint", "wrist_3_joint"};
+                waypoints.push_back(pose);
+            }
 
-        double total_time = 5.0;
-        double time_step = total_time / waypoints.size();
-
-        for (size_t i = 0; i < waypoints.size(); ++i) {
-            trajectory_msgs::msg::JointTrajectoryPoint point;
-            point.positions = computeInverseKinematics(waypoints[i]);
-
-            double t = time_step * (i + 1);
-            builtin_interfaces::msg::Duration duration_msg;
-            duration_msg.sec = static_cast<int>(t);
-            duration_msg.nanosec = static_cast<int>((t - duration_msg.sec) * 1e9);
-            point.time_from_start = duration_msg;
-
-            traj_msg.points.push_back(point);
+            executeTrajectory(waypoints);
         }
+    }
+
+    void executeTrajectory(const std::vector<geometry_msgs::msg::Pose>& waypoints) {
+        if (waypoints.empty()) {
+            RCLCPP_ERROR(this->get_logger(), "No valid waypoints to execute.");
+            return;
+        }
+
+        moveit_msgs::msg::RobotTrajectory trajectory;
+        double fraction = move_group_->computeCartesianPath(waypoints, 0.01, 0.0, trajectory);
+
+        if (fraction < 0.95) {
+            RCLCPP_ERROR(this->get_logger(), "Failed to compute full Cartesian path (%.2f%%).", fraction * 100);
+            return;
+        }
+
+        moveit::planning_interface::MoveGroupInterface::Plan plan;
+        plan.trajectory_ = trajectory;
 
         RCLCPP_INFO(this->get_logger(), "Executing spline trajectory...");
-        trajectory_pub_->publish(traj_msg);
+        move_group_->execute(plan);
+        RCLCPP_INFO(this->get_logger(), "Trajectory execution completed.");
     }
 };
 
 int main(int argc, char** argv) {
     rclcpp::init(argc, argv);
+    
     auto node = std::make_shared<SplineFollower>();
-    node->startDrawing();
-    rclcpp::spin(node);
+    rclcpp::executors::SingleThreadedExecutor executor;
+    executor.add_node(node);
+
+    RCLCPP_INFO(node->get_logger(), "Activating SplineFollower...");
+    node->on_activate();  // Initialize MoveGroupInterface safely
+
+    executor.spin();
     rclcpp::shutdown();
     return 0;
 }
