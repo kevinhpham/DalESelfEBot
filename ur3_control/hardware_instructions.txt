@@ -1,0 +1,9 @@
+# Launch UR Driver for Hardware
+
+# Launch MoveIt
+
+ros2 launch ur_moveit_config ur_moveit.launch.py ur_type:=ur3e launch_rviz:=false
+
+# Launch Spline Follower
+
+ros2 run ur3_control spline_follower
