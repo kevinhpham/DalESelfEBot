@@ -20,7 +20,7 @@ public:
     void on_activate() {
         auto node_shared_ptr = shared_from_this();
         move_group_ = std::make_shared<moveit::planning_interface::MoveGroupInterface>(
-            node_shared_ptr, "manipulator");
+            node_shared_ptr, "ur_manipulator");
 
         RCLCPP_INFO(this->get_logger(), "MoveGroupInterface initialized.");
 

@@ -25,12 +25,23 @@ source install/setup.bash
 
 # Launch Simulated UR3
 
-ros2 launch ur_robot_driver ur_control.launch.py ur_type:=ur3e use_fake_hardware:=true launch_rviz:=true robot_ip:=0.0.0.0
+ros2 launch ur_robot_driver ur_control.launch.py ur_type:=ur3e use_fake_hardware:=true launch_rviz:=false robot_ip:=0.0.0.0
 
 # Launch MoveIt
 
 ros2 launch ur3e_moveit_config demo.launch.py
 ros2 launch ur3e_moveit_config move_group.launch.py
+
+ros2 launch ur_moveit_config ur_moveit.launch.py ur_type:=ur3e
+
+ros2 launch ur_moveit_config move_group.launch.py
+
+
+
+Search: ur ros2 driver - using sim
+Use the moviit config in the ur driver
+
+for actual hardware: launch driver, moveit stack and then your node. 
 
 # Launch Control Node
 
