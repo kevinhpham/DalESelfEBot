@@ -2,25 +2,10 @@
 
 ln ~/git/DalESelfEBot/ur3_control ~/ros2_ws/src/ur3_control
 
-# Launch MoviIt Setup Assistant
-
-ros2 launch moveit_setup_assistant setup_assistant.launch.py
-
-# Create MoveIt Config Package Directory
-mkdir ~/git/DalESelfEBot/ur3e_moveit_config
-# Set the Packge path to ~/git/DalESelfEBot/ur3e_moveit_config
-# Link the MoveIt Config Package to your ros2_ws
-ln -s ~/git/DalESelfEBot/ur3e_moveit_config ~/ros2_ws/src/
-# Generate the Package in MoveIt - Need to fill in all details first
-
 # Build Packages
 
 cd ~/ros2_ws
 colcon build --packages-select ur3_control --symlink-install
-source install/setup.bash
-
-cd ~/ros2_ws
-colcon build --packages-select ur3e_moveit_config --symlink-install
 source install/setup.bash
 
 # Launch Simulated UR3
