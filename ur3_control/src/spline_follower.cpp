@@ -81,9 +81,9 @@ void SplineFollower::runStateMachine() {
                     // ✅ Get the current pose of the robot
                     geometry_msgs::msg::Pose current_pose = move_group_->getCurrentPose().pose;
 
-                    // ✅ Compute a straight-line interpolated path to the intermediate pose
+                    // ✅ Compute a straight-line interpolated path to the intermediate poses
                     std::vector<geometry_msgs::msg::Pose> path_to_intermediate =
-                        computeLinearInterpolationPath(current_pose, intermediate_pose, 10);
+                        computeLinearInterpolationPath(current_pose, intermediate_pose, 100);
 
                     // ✅ Execute the trajectory to move to the intermediate pose
                     executeTrajectory(path_to_intermediate);
@@ -281,7 +281,7 @@ bool SplineFollower::executeTrajectory(const std::vector<geometry_msgs::msg::Pos
     plan.trajectory_ = trajectory;
     move_group_->execute(plan);
 
-    std::this_thread::sleep_for(1s);
+    std::this_thread::sleep_for(5s);
     return true;
 }
 
