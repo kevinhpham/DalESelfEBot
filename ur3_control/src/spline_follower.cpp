@@ -31,7 +31,18 @@ void SplineFollower::on_activate() {
         return;
     }
 
-    runStateMachine();
+    // runStateMachine();
+    geometry_msgs::msg::Pose current_pose = move_group_->getCurrentPose().pose;
+    geometry_msgs::msg::Pose new_pose;
+    new_pose.position.x = 0.0;
+    new_pose.position.y = 0.0;
+    new_pose.position.z = 0.0;
+
+    std::vector<geometry_msgs::msg::Pose> path = 
+                    computeLinearInterpolationPath(current_pose, new_pose, 100);
+
+    executeTrajectory(path);
+
 }
 
 void SplineFollower::runStateMachine() {
