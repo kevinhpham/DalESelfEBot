@@ -23,10 +23,10 @@ public:
 private:
     enum class State {
         INIT,
-        GEN_INTERMEDIATE_TRAJ,
         MOVE_TO_INTERMEDIATE_POS,
-        GEN_DRAWING_TRAJECTORY,
+        MOVE_TO_CANVAS,
         MOVE_THROUGH_DRAWING_TRAJECTORY,
+        MOVE_OFF_CANVAS,
         STOP
     };
 
@@ -61,6 +61,13 @@ private:
 
     // Helper function for getting waypoint pose
     geometry_msgs::msg::Pose getWaypointPose(const json& waypoint, double lift);
+
+    std::vector<geometry_msgs::msg::Pose> computeLinearInterpolationPath(
+        const geometry_msgs::msg::Pose& start_pose, 
+        const geometry_msgs::msg::Pose& end_pose, 
+        int num_waypoints);
+
+    double calculateAverageCanvasHeight();
 };
 
 #endif  // SPLINE_FOLLOWER_HPP

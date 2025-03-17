@@ -38,42 +38,129 @@ void SplineFollower::runStateMachine() {
     while (rclcpp::ok()) {
         switch (state_) {
             case State::INIT:
+            {
+                // Set the safe start pose based on localization data
                 setSafeStartPose();
-                state_ = State::GEN_INTERMEDIATE_TRAJ;
-                break;
 
-            case State::GEN_INTERMEDIATE_TRAJ:
-                if (current_spline_index_ < spline_data_["splines"].size()) {
-                    generateIntermediateTrajectory();
-                    state_ = State::MOVE_TO_INTERMEDIATE_POS;
-                } else {
-                    state_ = State::STOP;
-                }
+                // ✅ Get the current pose of the robot
+                geometry_msgs::msg::Pose current_pose = move_group_->getCurrentPose().pose;
+
+                // ✅ Compute a straight-line interpolated path to the safe start pose
+                std::vector<geometry_msgs::msg::Pose> path_to_safe_start = 
+                    computeLinearInterpolationPath(current_pose, safe_start_pose_, 10);
+
+                // ✅ Execute the trajectory to move safely to the start pose
+                executeTrajectory(path_to_safe_start);
+
+                // ✅ Once the move is complete, transition to the next state
+                state_ = State::MOVE_TO_INTERMEDIATE_POS;
                 break;
+            }
 
             case State::MOVE_TO_INTERMEDIATE_POS:
-                if (executeTrajectory(current_trajectory_)) {
-                    state_ = State::GEN_DRAWING_TRAJECTORY;
-                } else {
-                    RCLCPP_ERROR(this->get_logger(), "Failed to move to intermediate position.");
+            {
+                // ✅ Ensure we have a next spline to move to
+                if (current_spline_index_ < spline_data_["splines"].size()) {
+                    
+                    // ✅ Get the first waypoint of the next spline
+                    json next_spline = spline_data_["splines"][current_spline_index_];
+                    json first_waypoint = next_spline["waypoints"][0];
+
+                    // ✅ Calculate the intermediate pose (100mm above the first waypoint)
+                    geometry_msgs::msg::Pose intermediate_pose;
+                    intermediate_pose.position.x = first_waypoint[0].get<double>();
+                    intermediate_pose.position.y = first_waypoint[1].get<double>();
+                    intermediate_pose.position.z = first_waypoint[2].get<double>() + 0.1;  // 100mm above
+                    
+                    // ✅ Ensure the orientation is pointing straight down
+                    intermediate_pose.orientation.x = 0.0;
+                    intermediate_pose.orientation.y = 1.0;
+                    intermediate_pose.orientation.z = 0.0;
+                    intermediate_pose.orientation.w = 0.0;
+
+                    // ✅ Get the current pose of the robot
+                    geometry_msgs::msg::Pose current_pose = move_group_->getCurrentPose().pose;
+
+                    // ✅ Compute a straight-line interpolated path to the intermediate pose
+                    std::vector<geometry_msgs::msg::Pose> path_to_intermediate =
+                        computeLinearInterpolationPath(current_pose, intermediate_pose, 10);
+
+                    // ✅ Execute the trajectory to move to the intermediate pose
+                    executeTrajectory(path_to_intermediate);
+
+                    // ✅ Move to the next state once the move is complete
+                    state_ = State::MOVE_TO_CANVAS;
+                } 
+                else {
+                    // ✅ If no more splines left, go to STOP state
                     state_ = State::STOP;
                 }
                 break;
+            }
 
-            case State::GEN_DRAWING_TRAJECTORY:
-                generateDrawingTrajectory();
+            case State::MOVE_TO_CANVAS:
+            {
+                // ✅ Calculate the average Z position of the canvas
+                double canvas_z = calculateAverageCanvasHeight();
+
+                // ✅ Get the current pose of the robot
+                geometry_msgs::msg::Pose current_pose = move_group_->getCurrentPose().pose;
+
+                // ✅ Set the target pose (same x, y as current pose, but at canvas height)
+                geometry_msgs::msg::Pose canvas_pose = current_pose;
+                canvas_pose.position.z = canvas_z;  // Move to the canvas surface
+
+                // ✅ Compute a straight-line interpolated path to the canvas
+                std::vector<geometry_msgs::msg::Pose> path_to_canvas =
+                    computeLinearInterpolationPath(current_pose, canvas_pose, 10);
+
+                // ✅ Execute the trajectory to move to the canvas
+                executeTrajectory(path_to_canvas);
+
+                // ✅ Move to next state to start drawing
                 state_ = State::MOVE_THROUGH_DRAWING_TRAJECTORY;
                 break;
+            }
 
             case State::MOVE_THROUGH_DRAWING_TRAJECTORY:
                 if (executeTrajectory(current_trajectory_)) {
                     current_spline_index_++;
-                    state_ = State::GEN_INTERMEDIATE_TRAJ;
+                    state_ = State::MOVE_OFF_CANVAS;
                 } else {
                     RCLCPP_ERROR(this->get_logger(), "Failed to execute drawing trajectory.");
                     state_ = State::STOP;
                 }
                 break;
+
+            case State::MOVE_OFF_CANVAS:
+            {
+                // ✅ Get the current pose of the robot
+                geometry_msgs::msg::Pose current_pose = move_group_->getCurrentPose().pose;
+            
+                // ✅ Get the canvas height
+                double canvas_z = calculateAverageCanvasHeight();
+            
+                // ✅ Compute the safe lifted pose (100mm above the canvas)
+                geometry_msgs::msg::Pose lifted_pose = current_pose;
+                lifted_pose.position.z = canvas_z + 0.1;  // Move 100mm up
+            
+                // ✅ Compute a straight-line interpolated trajectory
+                std::vector<geometry_msgs::msg::Pose> path_off_canvas =
+                    computeLinearInterpolationPath(current_pose, lifted_pose, 10);
+            
+                // ✅ Execute the trajectory to lift off the canvas
+                executeTrajectory(path_off_canvas);
+            
+                // ✅ Move to the next state (going to the next spline or stopping)
+                current_spline_index_++;
+                if (current_spline_index_ < spline_data_["splines"].size()) {
+                    state_ = State::MOVE_TO_INTERMEDIATE_POS;
+                } else {
+                    state_ = State::STOP;
+                }
+            
+                break;
+            }                
 
             case State::STOP:
                 moveToSafeEndPose();
@@ -142,7 +229,45 @@ geometry_msgs::msg::Pose SplineFollower::parsePose(const YAML::Node& node) {
 }
 
 void SplineFollower::setSafeStartPose() {
-    executePoseTarget(safe_start_pose_, "Moving to safe start pose");
+    // Define the YAML file path
+    std::string yaml_file = "/home/jarred/git/DalESelfEBot/ur3_localisation/config/params.yaml";
+
+    // Open the YAML file
+    std::ifstream file(yaml_file);
+    if (!file) {
+        RCLCPP_ERROR(this->get_logger(), "Failed to open localization file: %s", yaml_file.c_str());
+        return;
+    }
+
+    // Parse the YAML file
+    YAML::Node config = YAML::Load(file);
+    file.close();
+
+    // Ensure that corner positions exist in the YAML file
+    if (!config["corner_positions"] || config["corner_positions"].size() != 4) {
+        RCLCPP_ERROR(this->get_logger(), "Invalid or missing corner_positions in params.yaml");
+        return;
+    }
+
+    // Compute the center position of the rectangle
+    double x_sum = 0.0, y_sum = 0.0;
+    for (const auto& corner : config["corner_positions"]) {
+        x_sum += corner["x"].as<double>();
+        y_sum += corner["y"].as<double>();
+    }
+
+    safe_start_pose_.position.x = x_sum / 4.0;
+    safe_start_pose_.position.y = y_sum / 4.0;
+    safe_start_pose_.position.z = 0.1;  // 100mm above workspace
+
+    // Orientation facing downward (Quaternion for downward orientation)
+    safe_start_pose_.orientation.x = 0.0;
+    safe_start_pose_.orientation.y = 1.0;  // Pointing downward
+    safe_start_pose_.orientation.z = 0.0;
+    safe_start_pose_.orientation.w = 0.0;
+
+    RCLCPP_INFO(this->get_logger(), "Safe start pose set at (%.3f, %.3f, %.3f) with downward orientation.",
+                safe_start_pose_.position.x, safe_start_pose_.position.y, safe_start_pose_.position.z);
 }
 
 bool SplineFollower::executeTrajectory(const std::vector<geometry_msgs::msg::Pose>& waypoints) {
@@ -234,13 +359,21 @@ void SplineFollower::executePoseTarget(const geometry_msgs::msg::Pose& target_po
 }
 
 void SplineFollower::moveToSafeEndPose() {
-    // Move back to the originally determined safe starting position
-    geometry_msgs::msg::Pose safe_end_pose = getWaypointPose(remaining_splines_.front()["waypoints"][0], 0.05);
-    
-    executePoseTarget(safe_end_pose, "Moving back to safe end pose");
+    // ✅ Get the current pose of the robot
+    geometry_msgs::msg::Pose current_pose = move_group_->getCurrentPose().pose;
 
-    // Stop MoveIt execution after reaching the safe pose
-    RCLCPP_INFO(this->get_logger(), "Shutting down MoveIt execution.");
+    // ✅ Safe end pose is the same as the safe start pose
+    geometry_msgs::msg::Pose safe_end_pose = safe_start_pose_;
+
+    // ✅ Compute a straight-line interpolated trajectory
+    std::vector<geometry_msgs::msg::Pose> path_to_safe_end =
+        computeLinearInterpolationPath(current_pose, safe_end_pose, 10);
+
+    // ✅ Execute the trajectory to move safely to the end position
+    executeTrajectory(path_to_safe_end);
+
+    // ✅ Stop MoveIt execution after reaching the safe pose
+    RCLCPP_INFO(this->get_logger(), "Robot safely moved to end position. Shutting down MoveIt execution.");
 }
 
 geometry_msgs::msg::Pose SplineFollower::getWaypointPose(const json& waypoint, double lift) {
@@ -256,3 +389,60 @@ geometry_msgs::msg::Pose SplineFollower::getWaypointPose(const json& waypoint, d
 
     return pose;
 }
+
+std::vector<geometry_msgs::msg::Pose> SplineFollower::computeLinearInterpolationPath(
+    const geometry_msgs::msg::Pose& start_pose, 
+    const geometry_msgs::msg::Pose& end_pose, 
+    int num_waypoints) 
+{
+    std::vector<geometry_msgs::msg::Pose> waypoints;
+    waypoints.reserve(num_waypoints);
+
+    for (int i = 0; i <= num_waypoints; i++) {
+        double t = static_cast<double>(i) / static_cast<double>(num_waypoints);
+
+        geometry_msgs::msg::Pose interpolated_pose;
+
+        // Linear interpolation for position (X, Y, Z)
+        interpolated_pose.position.x = start_pose.position.x + t * (end_pose.position.x - start_pose.position.x);
+        interpolated_pose.position.y = start_pose.position.y + t * (end_pose.position.y - start_pose.position.y);
+        interpolated_pose.position.z = start_pose.position.z + t * (end_pose.position.z - start_pose.position.z);
+
+        // Spherical Linear Interpolation (SLERP) for orientation
+        tf2::Quaternion start_q(
+            start_pose.orientation.x, start_pose.orientation.y, 
+            start_pose.orientation.z, start_pose.orientation.w);
+        tf2::Quaternion end_q(
+            end_pose.orientation.x, end_pose.orientation.y, 
+            end_pose.orientation.z, end_pose.orientation.w);
+        tf2::Quaternion interpolated_q = start_q.slerp(end_q, t);
+        interpolated_pose.orientation.x = interpolated_q.x();
+        interpolated_pose.orientation.y = interpolated_q.y();
+        interpolated_pose.orientation.z = interpolated_q.z();
+        interpolated_pose.orientation.w = interpolated_q.w();
+
+        waypoints.push_back(interpolated_pose);
+    }
+
+    return waypoints;
+}
+
+double SplineFollower::calculateAverageCanvasHeight() {
+    std::string yaml_path = "/home/jarred/git/DalESelfEBot/ur3_localisation/config/params.yaml";
+    
+    YAML::Node config = YAML::LoadFile(yaml_path);
+    if (!config["corner_positions"]) {
+        RCLCPP_ERROR(this->get_logger(), "Failed to load corner_positions from params.yaml!");
+        return 0.05;  // Default canvas height if loading fails
+    }
+
+    double total_z = 0.0;
+    int count = 0;
+    for (const auto& corner : config["corner_positions"]) {
+        total_z += corner["z"].as<double>();
+        count++;
+    }
+
+    return (count > 0) ? (total_z / count) : 0.05;  // Default to 50mm if something goes wrong
+}
+
