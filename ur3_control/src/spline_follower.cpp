@@ -1,199 +1,258 @@
-#include <rclcpp/rclcpp.hpp>
-#include <moveit/move_group_interface/move_group_interface.h>
-#include <moveit/planning_scene_interface/planning_scene_interface.h>
-#include <moveit_msgs/msg/display_trajectory.hpp>
-#include <moveit_msgs/msg/collision_object.hpp>
-#include <geometry_msgs/msg/pose.hpp>
-#include <nlohmann/json.hpp>
+#include "spline_follower.hpp"
 #include <fstream>
-#include <vector>
+#include <thread>
 
-using json = nlohmann::json;
 using namespace std::chrono_literals;
+using json = nlohmann::json;
 
-class SplineFollower : public rclcpp::Node {
-public:
-    SplineFollower() : Node("spline_follower") {
-        RCLCPP_INFO(this->get_logger(), "SplineFollower node created.");
+SplineFollower::SplineFollower() : Node("spline_follower"), state_(State::INIT), current_spline_index_(0) {
+    RCLCPP_INFO(this->get_logger(), "SplineFollower node created.");
+}
+
+void SplineFollower::on_activate() {
+    auto node_shared_ptr = shared_from_this();
+    move_group_ = std::make_shared<moveit::planning_interface::MoveGroupInterface>(
+        node_shared_ptr, "ur_manipulator");
+
+    RCLCPP_INFO(this->get_logger(), "MoveGroupInterface initialized.");
+    move_group_->setPlannerId("RRTConnectkConfigDefault");
+    move_group_->setMaxVelocityScalingFactor(1.0);
+    move_group_->setMaxAccelerationScalingFactor(1.0);
+
+    addGroundPlane();
+
+    if (!loadSplines()) {
+        RCLCPP_ERROR(this->get_logger(), "Failed to load splines. Exiting...");
+        return;
     }
 
-    void on_activate() {
-        auto node_shared_ptr = shared_from_this();
-        move_group_ = std::make_shared<moveit::planning_interface::MoveGroupInterface>(
-            node_shared_ptr, "ur_manipulator");
-
-        RCLCPP_INFO(this->get_logger(), "MoveGroupInterface initialized.");
-
-        move_group_->setPlannerId("RRTConnectkConfigDefault");
-        move_group_->setMaxVelocityScalingFactor(1.0);
-        move_group_->setMaxAccelerationScalingFactor(1.0);
-
-        addGroundPlane();
-        setSafeStartPose();
-
-        if (!loadSplines()) {
-            RCLCPP_ERROR(this->get_logger(), "Failed to load splines. Exiting...");
-            return;
-        }
-
-        followSplines();
-
-        // 🛑 **Ensure MoveIt stops execution completely**
-        stopExecution();
-        
-        RCLCPP_INFO(this->get_logger(), "All splines completed. Stopping MoveIt and shutting down...");
-
-        // 🔥 **Force ROS 2 Node to shut down properly**
-        rclcpp::shutdown();
-        exit(0);  // 🔥 Hard exit to ensure no further execution.
+    if (!initializeSafePoses()) {
+        RCLCPP_ERROR(this->get_logger(), "Failed to initialize safe poses. Exiting...");
+        return;
     }
 
-private:
-    std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group_;
-    json spline_data_;
+    runStateMachine();
+}
 
-    void addGroundPlane() {
-        moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
-        moveit_msgs::msg::CollisionObject ground;
-        
-        ground.header.frame_id = "world";
-        ground.id = "ground_plane";
+void SplineFollower::runStateMachine() {
+    while (rclcpp::ok()) {
+        switch (state_) {
+            case State::INIT:
+                setSafeStartPose();
+                state_ = State::GEN_INTERMEDIATE_TRAJ;
+                break;
 
-        shape_msgs::msg::SolidPrimitive ground_shape;
-        ground_shape.type = shape_msgs::msg::SolidPrimitive::BOX;
-        ground_shape.dimensions = {10.0, 10.0, 0.01};
-
-        geometry_msgs::msg::Pose ground_pose;
-        ground_pose.position.x = 0.0;
-        ground_pose.position.y = 0.0;
-        ground_pose.position.z = -0.005;
-
-        ground.primitives.push_back(ground_shape);
-        ground.primitive_poses.push_back(ground_pose);
-        ground.operation = ground.ADD;
-
-        planning_scene_interface.applyCollisionObject(ground);
-
-        RCLCPP_INFO(this->get_logger(), "Ground plane added at Z = 0.");
-    }
-
-    void setSafeStartPose() {
-        geometry_msgs::msg::Pose start_pose;
-        start_pose.position.x = 0.3;
-        start_pose.position.y = 0.0;
-        start_pose.position.z = 0.15;
-
-        start_pose.orientation.x = 0.0;
-        start_pose.orientation.y = 1.0;
-        start_pose.orientation.z = 0.0;
-        start_pose.orientation.w = 0.0;
-
-        move_group_->setPoseTarget(start_pose);
-
-        moveit::planning_interface::MoveGroupInterface::Plan start_plan;
-        bool success = (move_group_->plan(start_plan) == moveit::core::MoveItErrorCode::SUCCESS);
-
-        if (success) {
-            RCLCPP_INFO(this->get_logger(), "Moving to safe start pose...");
-            move_group_->execute(start_plan);
-            RCLCPP_INFO(this->get_logger(), "Robot safely positioned above ground.");
-        } else {
-            RCLCPP_ERROR(this->get_logger(), "Failed to plan safe start pose.");
-        }
-    }
-
-    bool loadSplines() {
-        std::ifstream file("/home/jarred/git/DalESelfEBot/ur3_control/config/drawing_path.json");
-        if (!file) {
-            RCLCPP_ERROR(this->get_logger(), "Could not open spline JSON file.");
-            return false;
-        }
-
-        file >> spline_data_;
-        if (spline_data_["splines"].empty()) {
-            RCLCPP_ERROR(this->get_logger(), "No splines found in JSON!");
-            return false;
-        }
-
-        RCLCPP_INFO(this->get_logger(), "Loaded %lu splines.", spline_data_["splines"].size());
-        return true;
-    }
-
-    void followSplines() {
-        for (const auto& spline : spline_data_["splines"]) {
-            std::vector<geometry_msgs::msg::Pose> waypoints;
-
-            for (const auto& waypoint : spline["waypoints"]) {
-                if (waypoint.size() < 3) {
-                    RCLCPP_WARN(this->get_logger(), "Skipping invalid waypoint.");
-                    continue;
+            case State::GEN_INTERMEDIATE_TRAJ:
+                if (current_spline_index_ < spline_data_["splines"].size()) {
+                    generateIntermediateTrajectory();
+                    state_ = State::MOVE_TO_INTERMEDIATE_POS;
+                } else {
+                    state_ = State::STOP;
                 }
+                break;
 
-                geometry_msgs::msg::Pose pose;
-                pose.position.x = waypoint[0];
-                pose.position.y = waypoint[1];
-                pose.position.z = waypoint[2];
+            case State::MOVE_TO_INTERMEDIATE_POS:
+                if (executeTrajectory(current_trajectory_)) {
+                    state_ = State::GEN_DRAWING_TRAJECTORY;
+                } else {
+                    RCLCPP_ERROR(this->get_logger(), "Failed to move to intermediate position.");
+                    state_ = State::STOP;
+                }
+                break;
 
-                pose.orientation.x = 0.0;
-                pose.orientation.y = 1.0;
-                pose.orientation.z = 0.0;
-                pose.orientation.w = 0.0;
+            case State::GEN_DRAWING_TRAJECTORY:
+                generateDrawingTrajectory();
+                state_ = State::MOVE_THROUGH_DRAWING_TRAJECTORY;
+                break;
 
-                waypoints.push_back(pose);
-            }
+            case State::MOVE_THROUGH_DRAWING_TRAJECTORY:
+                if (executeTrajectory(current_trajectory_)) {
+                    current_spline_index_++;
+                    state_ = State::GEN_INTERMEDIATE_TRAJ;
+                } else {
+                    RCLCPP_ERROR(this->get_logger(), "Failed to execute drawing trajectory.");
+                    state_ = State::STOP;
+                }
+                break;
 
-            executeTrajectory(waypoints);
+            case State::STOP:
+                moveToSafeEndPose();
+                stopExecution();
+                RCLCPP_INFO(this->get_logger(), "All splines completed. Stopping MoveIt and shutting down...");
+                rclcpp::shutdown();
+                return;
         }
     }
+}
 
-    void executeTrajectory(const std::vector<geometry_msgs::msg::Pose>& waypoints) {
-        if (waypoints.empty()) {
-            RCLCPP_ERROR(this->get_logger(), "No valid waypoints to execute.");
-            return;
-        }
+void SplineFollower::addGroundPlane() {
+    moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
+    moveit_msgs::msg::CollisionObject ground;
+    ground.header.frame_id = "world";
+    ground.id = "ground_plane";
 
-        moveit_msgs::msg::RobotTrajectory trajectory;
-        double fraction = move_group_->computeCartesianPath(waypoints, 0.01, 0.0, trajectory);
+    shape_msgs::msg::SolidPrimitive ground_shape;
+    ground_shape.type = shape_msgs::msg::SolidPrimitive::BOX;
+    ground_shape.dimensions = {10.0, 10.0, 0.01};
 
-        if (fraction < 0.95) {
-            RCLCPP_ERROR(this->get_logger(), "Failed to compute full Cartesian path (%.2f%%).", fraction * 100);
-            return;
-        }
+    geometry_msgs::msg::Pose ground_pose;
+    ground_pose.position.z = -0.005;
 
-        moveit::planning_interface::MoveGroupInterface::Plan plan;
-        plan.trajectory_ = trajectory;
+    ground.primitives.push_back(ground_shape);
+    ground.primitive_poses.push_back(ground_pose);
+    ground.operation = ground.ADD;
 
-        RCLCPP_INFO(this->get_logger(), "Executing spline trajectory...");
+    planning_scene_interface.applyCollisionObject(ground);
+}
+
+bool SplineFollower::loadSplines() {
+    std::ifstream file("/home/jarred/git/DalESelfEBot/ur3_control/config/drawing_path.json");
+    if (!file) {
+        RCLCPP_ERROR(this->get_logger(), "Could not open spline JSON file.");
+        return false;
+    }
+
+    file >> spline_data_;
+    return !spline_data_["splines"].empty();
+}
+
+bool SplineFollower::initializeSafePoses() {
+    std::string localization_params_path = "/path/to/localization/params.yaml";
+    std::ifstream file(localization_params_path);
+    if (!file) return false;
+
+    YAML::Node config = YAML::Load(file);
+    if (!config["corner_positions"] || config["corner_positions"].size() < 4) return false;
+
+    safe_start_pose_ = parsePose(config["corner_positions"][0]);
+    safe_end_pose_ = parsePose(config["corner_positions"][2]);
+    return true;
+}
+
+geometry_msgs::msg::Pose SplineFollower::parsePose(const YAML::Node& node) {
+    geometry_msgs::msg::Pose pose;
+    pose.position.x = node["x"].as<double>();
+    pose.position.y = node["y"].as<double>();
+    pose.position.z = node["z"].as<double>();
+    pose.orientation.x = node["qx"].as<double>();
+    pose.orientation.y = node["qy"].as<double>();
+    pose.orientation.z = node["qz"].as<double>();
+    pose.orientation.w = node["qw"].as<double>();
+    return pose;
+}
+
+void SplineFollower::setSafeStartPose() {
+    executePoseTarget(safe_start_pose_, "Moving to safe start pose");
+}
+
+bool SplineFollower::executeTrajectory(const std::vector<geometry_msgs::msg::Pose>& waypoints) {
+    if (waypoints.empty()) return false;
+
+    moveit_msgs::msg::RobotTrajectory trajectory;
+    double fraction = move_group_->computeCartesianPath(waypoints, 0.01, 0.0, trajectory);
+    if (fraction < 0.95) return false;
+
+    moveit::planning_interface::MoveGroupInterface::Plan plan;
+    plan.trajectory_ = trajectory;
+    move_group_->execute(plan);
+
+    std::this_thread::sleep_for(1s);
+    return true;
+}
+
+void SplineFollower::stopExecution() {
+    move_group_->stop();
+    move_group_->clearPoseTargets();
+    std::this_thread::sleep_for(1s);
+}
+
+void SplineFollower::generateIntermediateTrajectory() {
+    if (remaining_splines_.empty()) {
+        RCLCPP_WARN(this->get_logger(), "No remaining splines. Skipping intermediate trajectory generation.");
+        return;
+    }
+
+    // Get the next spline's first waypoint
+    geometry_msgs::msg::Pose next_waypoint = getWaypointPose(remaining_splines_.front()["waypoints"][0], 0.05);
+
+    // Generate a straight-line trajectory from the current pose to the next waypoint (lifted position)
+    geometry_msgs::msg::Pose current_pose = move_group_->getCurrentPose().pose;
+    std::vector<geometry_msgs::msg::Pose> waypoints = {current_pose, next_waypoint};
+
+    moveit_msgs::msg::RobotTrajectory trajectory;
+    double fraction = move_group_->computeCartesianPath(waypoints, 0.01, 0.0, trajectory);
+
+    if (fraction < 0.95) {
+        RCLCPP_ERROR(this->get_logger(), "Failed to compute intermediate trajectory (%.2f%%).", fraction * 100);
+        return;
+    }
+
+    intermediate_trajectory_ = trajectory;
+    RCLCPP_INFO(this->get_logger(), "Intermediate trajectory generated successfully.");
+}
+
+void SplineFollower::generateDrawingTrajectory() {
+    if (remaining_splines_.empty()) {
+        RCLCPP_WARN(this->get_logger(), "No remaining splines to generate drawing trajectory.");
+        return;
+    }
+
+    std::vector<geometry_msgs::msg::Pose> waypoints;
+    for (const auto& waypoint : remaining_splines_.front()["waypoints"]) {
+        waypoints.push_back(getWaypointPose(waypoint, 0.0));  // No lift, just drawing
+    }
+
+    moveit_msgs::msg::RobotTrajectory trajectory;
+    double fraction = move_group_->computeCartesianPath(waypoints, 0.01, 0.0, trajectory);
+
+    if (fraction < 0.95) {
+        RCLCPP_ERROR(this->get_logger(), "Failed to compute drawing trajectory (%.2f%%).", fraction * 100);
+        return;
+    }
+
+    drawing_trajectory_ = trajectory;
+    RCLCPP_INFO(this->get_logger(), "Drawing trajectory generated successfully.");
+}
+
+void SplineFollower::executePoseTarget(const geometry_msgs::msg::Pose& target_pose, const std::string& description) {
+    move_group_->setPoseTarget(target_pose);
+
+    moveit::planning_interface::MoveGroupInterface::Plan plan;
+    bool success = (move_group_->plan(plan) == moveit::core::MoveItErrorCode::SUCCESS);
+
+    if (success) {
+        RCLCPP_INFO(this->get_logger(), "%s...", description.c_str());
         move_group_->execute(plan);
-        RCLCPP_INFO(this->get_logger(), "Trajectory execution completed.");
+
+        // ✅ Ensures MoveIt has time to execute before moving on
+        rclcpp::sleep_for(std::chrono::seconds(5));
+
+        RCLCPP_INFO(this->get_logger(), "%s completed.", description.c_str());
+    } else {
+        RCLCPP_ERROR(this->get_logger(), "Failed to plan: %s", description.c_str());
     }
+}
 
-    void stopExecution() {
-        RCLCPP_WARN(this->get_logger(), "Stopping MoveIt execution...");
-        
-        move_group_->stop();  // 🛑 Stop active execution
-        move_group_->clearPoseTargets();  // 🛑 Clear any remaining targets
-
-        std::this_thread::sleep_for(1s);  // Small delay to ensure execution stops
-
-        RCLCPP_WARN(this->get_logger(), "MoveIt execution fully stopped.");
-    }
-};
-
-int main(int argc, char** argv) {
-    rclcpp::init(argc, argv);
+void SplineFollower::moveToSafeEndPose() {
+    // Move back to the originally determined safe starting position
+    geometry_msgs::msg::Pose safe_end_pose = getWaypointPose(remaining_splines_.front()["waypoints"][0], 0.05);
     
-    auto node = std::make_shared<SplineFollower>();
-    rclcpp::executors::SingleThreadedExecutor executor;
-    executor.add_node(node);
+    executePoseTarget(safe_end_pose, "Moving back to safe end pose");
 
-    RCLCPP_INFO(node->get_logger(), "Activating SplineFollower...");
-    node->on_activate();
+    // Stop MoveIt execution after reaching the safe pose
+    RCLCPP_INFO(this->get_logger(), "Shutting down MoveIt execution.");
+}
 
-    // 🚀 Instead of keeping executor spinning, shut down after execution
-    std::this_thread::sleep_for(2s);
-    rclcpp::shutdown();
-    exit(0);
+geometry_msgs::msg::Pose SplineFollower::getWaypointPose(const json& waypoint, double lift) {
+    geometry_msgs::msg::Pose pose;
+    pose.position.x = waypoint[0].get<double>();
+    pose.position.y = waypoint[1].get<double>();
+    pose.position.z = waypoint[2].get<double>() + lift;
 
-    return 0;
+    pose.orientation.x = 0.0;
+    pose.orientation.y = 1.0;
+    pose.orientation.z = 0.0;
+    pose.orientation.w = 0.0;
+
+    return pose;
 }

@@ -9313,6 +9313,18 @@
 		},
 		{
 			"isExternal" : true,
+			"path" : "/usr/lib/x86_64-linux-gnu/cmake/yaml-cpp/yaml-cpp-config-version.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/usr/lib/x86_64-linux-gnu/cmake/yaml-cpp/yaml-cpp-config.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/usr/lib/x86_64-linux-gnu/cmake/yaml-cpp/yaml-cpp-targets.cmake"
+		},
+		{
+			"isExternal" : true,
 			"path" : "/opt/ros/humble/share/ament_cmake_core/cmake/ament_cmake_coreConfig-version.cmake"
 		},
 		{

@@ -1507,5 +1507,6 @@ set(CMAKE_MAKEFILE_PRODUCTS
 set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/uninstall.dir/DependInfo.cmake"
   "CMakeFiles/ur3_control_uninstall.dir/DependInfo.cmake"
-  "CMakeFiles/spline_follower.dir/DependInfo.cmake"
+  "CMakeFiles/spline_follower_lib.dir/DependInfo.cmake"
+  "CMakeFiles/spline_follower_node.dir/DependInfo.cmake"
   )
