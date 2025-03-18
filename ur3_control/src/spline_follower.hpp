@@ -7,6 +7,8 @@
 #include <moveit_msgs/msg/display_trajectory.hpp>
 #include <moveit_msgs/msg/collision_object.hpp>
 #include <geometry_msgs/msg/pose.hpp>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_ros/buffer.h>
 #include <yaml-cpp/yaml.h>
 #include <nlohmann/json.hpp>
 #include <vector>
@@ -42,7 +44,6 @@ private:
     void runStateMachine();
     void addGroundPlane();
     bool loadSplines();
-    bool initializeSafePoses();
     geometry_msgs::msg::Pose parsePose(const YAML::Node& node);
     void setSafeStartPose();
     void generateIntermediateTrajectory();
@@ -68,6 +69,13 @@ private:
         int num_waypoints);
 
     double calculateAverageCanvasHeight();
+
+
+    tf2_ros::Buffer tf_buffer_;
+    tf2_ros::TransformListener tf_listener_;
+
+    geometry_msgs::msg::Pose getCurrentRobotPose();
+
 };
 
 #endif  // SPLINE_FOLLOWER_HPP

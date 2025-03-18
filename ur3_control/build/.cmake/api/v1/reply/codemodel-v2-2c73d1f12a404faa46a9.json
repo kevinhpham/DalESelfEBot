@@ -7,7 +7,7 @@
 				{
 					"build" : ".",
 					"hasInstallRule" : true,
-					"jsonFile" : "directory-.-Debug-6736ebc58d1103a85f60.json",
+					"jsonFile" : "directory-.-Debug-bef0400ab1bfcd7783ca.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.12"
@@ -45,16 +45,16 @@
 			[
 				{
 					"directoryIndex" : 0,
-					"id" : "spline_follower_lib::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-spline_follower_lib-Debug-8b2e37cf5f333b6e91d9.json",
-					"name" : "spline_follower_lib",
+					"id" : "spline_follower::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-spline_follower-Debug-c85e5c2b89d0686b9dd5.json",
+					"name" : "spline_follower",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 0,
-					"id" : "spline_follower_node::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-spline_follower_node-Debug-7a346962eaf817d7b8fa.json",
-					"name" : "spline_follower_node",
+					"id" : "spline_follower_lib::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-spline_follower_lib-Debug-d0d4fe588c74840566dd.json",
+					"name" : "spline_follower_lib",
 					"projectIndex" : 0
 				},
 				{

@@ -211,24 +211,24 @@ spline_follower_lib/fast:
 .PHONY : spline_follower_lib/fast
 
 #=============================================================================
-# Target rules for targets named spline_follower_node
+# Target rules for targets named spline_follower
 
 # Build rule for target.
-spline_follower_node: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 spline_follower_node
-.PHONY : spline_follower_node
+spline_follower: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 spline_follower
+.PHONY : spline_follower
 
 # fast build rule for target.
-spline_follower_node/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/spline_follower_node.dir/build.make CMakeFiles/spline_follower_node.dir/build
-.PHONY : spline_follower_node/fast
+spline_follower/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/spline_follower.dir/build.make CMakeFiles/spline_follower.dir/build
+.PHONY : spline_follower/fast
 
 src/main.o: src/main.cpp.o
 .PHONY : src/main.o
 
 # target to build an object file
 src/main.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/spline_follower_node.dir/build.make CMakeFiles/spline_follower_node.dir/src/main.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/spline_follower.dir/build.make CMakeFiles/spline_follower.dir/src/main.cpp.o
 .PHONY : src/main.cpp.o
 
 src/main.i: src/main.cpp.i
@@ -236,7 +236,7 @@ src/main.i: src/main.cpp.i
 
 # target to preprocess a source file
 src/main.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/spline_follower_node.dir/build.make CMakeFiles/spline_follower_node.dir/src/main.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/spline_follower.dir/build.make CMakeFiles/spline_follower.dir/src/main.cpp.i
 .PHONY : src/main.cpp.i
 
 src/main.s: src/main.cpp.s
@@ -244,7 +244,7 @@ src/main.s: src/main.cpp.s
 
 # target to generate assembly for a file
 src/main.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/spline_follower_node.dir/build.make CMakeFiles/spline_follower_node.dir/src/main.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/spline_follower.dir/build.make CMakeFiles/spline_follower.dir/src/main.cpp.s
 .PHONY : src/main.cpp.s
 
 src/spline_follower.o: src/spline_follower.cpp.o
@@ -286,8 +286,8 @@ help:
 	@echo "... test"
 	@echo "... uninstall"
 	@echo "... ur3_control_uninstall"
+	@echo "... spline_follower"
 	@echo "... spline_follower_lib"
-	@echo "... spline_follower_node"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"

@@ -5,7 +5,8 @@
 using namespace std::chrono_literals;
 using json = nlohmann::json;
 
-SplineFollower::SplineFollower() : Node("spline_follower"), state_(State::INIT), current_spline_index_(0) {
+SplineFollower::SplineFollower() : Node("spline_follower"), state_(State::INIT), current_spline_index_(0), tf_buffer_(this->get_clock()),
+tf_listener_(tf_buffer_){
     RCLCPP_INFO(this->get_logger(), "SplineFollower node created.");
 }
 
@@ -13,6 +14,9 @@ void SplineFollower::on_activate() {
     auto node_shared_ptr = shared_from_this();
     move_group_ = std::make_shared<moveit::planning_interface::MoveGroupInterface>(
         node_shared_ptr, "ur_manipulator");
+
+    move_group_->startStateMonitor();  // Start state monitoring service
+    rclcpp::sleep_for(std::chrono::seconds(2));
 
     RCLCPP_INFO(this->get_logger(), "MoveGroupInterface initialized.");
     move_group_->setPlannerId("RRTConnectkConfigDefault");
@@ -26,22 +30,21 @@ void SplineFollower::on_activate() {
         return;
     }
 
-    if (!initializeSafePoses()) {
-        RCLCPP_ERROR(this->get_logger(), "Failed to initialize safe poses. Exiting...");
-        return;
-    }
+    runStateMachine();
+    // geometry_msgs::msg::Pose current_pose = getCurrentRobotPose();
 
-    // runStateMachine();
-    geometry_msgs::msg::Pose current_pose = move_group_->getCurrentPose().pose;
-    geometry_msgs::msg::Pose new_pose;
-    new_pose.position.x = 0.0;
-    new_pose.position.y = 0.0;
-    new_pose.position.z = 0.0;
+    // std::cout << "Current Pose: x = " << current_pose.position.x << " y = " << current_pose.position.y 
+    // << " z = " << current_pose.position.z << std::endl;
 
-    std::vector<geometry_msgs::msg::Pose> path = 
-                    computeLinearInterpolationPath(current_pose, new_pose, 100);
+    // geometry_msgs::msg::Pose new_pose;
+    // new_pose.position.x = 0.5;
+    // new_pose.position.y = 0.5;
+    // new_pose.position.z = 0.5;
 
-    executeTrajectory(path);
+    // std::vector<geometry_msgs::msg::Pose> path = 
+    //                 computeLinearInterpolationPath(current_pose, new_pose, 10);
+
+    // executeTrajectory(path);
 
 }
 
@@ -53,12 +56,20 @@ void SplineFollower::runStateMachine() {
                 // Set the safe start pose based on localization data
                 setSafeStartPose();
 
+                std::cout << "Safe Start Pose: x = " << safe_start_pose_.position.x << " y = " << safe_start_pose_.position.y << " z = "
+                << safe_start_pose_.position.z << std::endl;
+
                 // ✅ Get the current pose of the robot
-                geometry_msgs::msg::Pose current_pose = move_group_->getCurrentPose().pose;
+                geometry_msgs::msg::Pose current_pose = getCurrentRobotPose();
+
+                std::cout << "Current Pose: x = " << current_pose.position.x << " y = " << current_pose.position.y 
+                << " z = " << current_pose.position.z << std::endl;
+
+                geometry_msgs::msg::Pose next_pose = safe_start_pose_;
 
                 // ✅ Compute a straight-line interpolated path to the safe start pose
                 std::vector<geometry_msgs::msg::Pose> path_to_safe_start = 
-                    computeLinearInterpolationPath(current_pose, safe_start_pose_, 10);
+                    computeLinearInterpolationPath(current_pose, next_pose, 10);
 
                 // ✅ Execute the trajectory to move safely to the start pose
                 executeTrajectory(path_to_safe_start);
@@ -90,7 +101,7 @@ void SplineFollower::runStateMachine() {
                     intermediate_pose.orientation.w = 0.0;
 
                     // ✅ Get the current pose of the robot
-                    geometry_msgs::msg::Pose current_pose = move_group_->getCurrentPose().pose;
+                    geometry_msgs::msg::Pose current_pose = getCurrentRobotPose();
 
                     // ✅ Compute a straight-line interpolated path to the intermediate poses
                     std::vector<geometry_msgs::msg::Pose> path_to_intermediate =
@@ -115,7 +126,7 @@ void SplineFollower::runStateMachine() {
                 double canvas_z = calculateAverageCanvasHeight();
 
                 // ✅ Get the current pose of the robot
-                geometry_msgs::msg::Pose current_pose = move_group_->getCurrentPose().pose;
+                geometry_msgs::msg::Pose current_pose = getCurrentRobotPose();
 
                 // ✅ Set the target pose (same x, y as current pose, but at canvas height)
                 geometry_msgs::msg::Pose canvas_pose = current_pose;
@@ -146,7 +157,7 @@ void SplineFollower::runStateMachine() {
             case State::MOVE_OFF_CANVAS:
             {
                 // ✅ Get the current pose of the robot
-                geometry_msgs::msg::Pose current_pose = move_group_->getCurrentPose().pose;
+                geometry_msgs::msg::Pose current_pose = getCurrentRobotPose();
             
                 // ✅ Get the canvas height
                 double canvas_z = calculateAverageCanvasHeight();
@@ -177,7 +188,7 @@ void SplineFollower::runStateMachine() {
                 moveToSafeEndPose();
                 stopExecution();
                 RCLCPP_INFO(this->get_logger(), "All splines completed. Stopping MoveIt and shutting down...");
-                rclcpp::shutdown();
+                // rclcpp::shutdown();
                 return;
         }
     }
@@ -212,19 +223,6 @@ bool SplineFollower::loadSplines() {
 
     file >> spline_data_;
     return !spline_data_["splines"].empty();
-}
-
-bool SplineFollower::initializeSafePoses() {
-    std::string localization_params_path = "/path/to/localization/params.yaml";
-    std::ifstream file(localization_params_path);
-    if (!file) return false;
-
-    YAML::Node config = YAML::Load(file);
-    if (!config["corner_positions"] || config["corner_positions"].size() < 4) return false;
-
-    safe_start_pose_ = parsePose(config["corner_positions"][0]);
-    safe_end_pose_ = parsePose(config["corner_positions"][2]);
-    return true;
 }
 
 geometry_msgs::msg::Pose SplineFollower::parsePose(const YAML::Node& node) {
@@ -286,13 +284,17 @@ bool SplineFollower::executeTrajectory(const std::vector<geometry_msgs::msg::Pos
 
     moveit_msgs::msg::RobotTrajectory trajectory;
     double fraction = move_group_->computeCartesianPath(waypoints, 0.01, 0.0, trajectory);
-    if (fraction < 0.95) return false;
+    // std::cout << "Made it here." << std::endl;
+    // if (fraction < 0.95) return false;
+
+    // std::cout << "Made it here." << std::endl;
 
     moveit::planning_interface::MoveGroupInterface::Plan plan;
     plan.trajectory_ = trajectory;
     move_group_->execute(plan);
 
     std::this_thread::sleep_for(5s);
+    // std::cout << "Made it here." << std::endl;
     return true;
 }
 
@@ -371,7 +373,7 @@ void SplineFollower::executePoseTarget(const geometry_msgs::msg::Pose& target_po
 
 void SplineFollower::moveToSafeEndPose() {
     // ✅ Get the current pose of the robot
-    geometry_msgs::msg::Pose current_pose = move_group_->getCurrentPose().pose;
+    geometry_msgs::msg::Pose current_pose = getCurrentRobotPose();
 
     // ✅ Safe end pose is the same as the safe start pose
     geometry_msgs::msg::Pose safe_end_pose = safe_start_pose_;
@@ -435,6 +437,8 @@ std::vector<geometry_msgs::msg::Pose> SplineFollower::computeLinearInterpolation
         waypoints.push_back(interpolated_pose);
     }
 
+    std::cout << "Calculated Linear Waypoints." << std::endl;
+
     return waypoints;
 }
 
@@ -457,3 +461,23 @@ double SplineFollower::calculateAverageCanvasHeight() {
     return (count > 0) ? (total_z / count) : 0.05;  // Default to 50mm if something goes wrong
 }
 
+geometry_msgs::msg::Pose SplineFollower::getCurrentRobotPose() {
+    geometry_msgs::msg::Pose pose;
+    try {
+        geometry_msgs::msg::TransformStamped transform_stamped;
+        transform_stamped = tf_buffer_.lookupTransform("base_link", "tool0", tf2::TimePointZero);
+
+        pose.position.x = transform_stamped.transform.translation.x;
+        pose.position.y = transform_stamped.transform.translation.y;
+        pose.position.z = transform_stamped.transform.translation.z;
+
+        pose.orientation.x = transform_stamped.transform.rotation.x;
+        pose.orientation.y = transform_stamped.transform.rotation.y;
+        pose.orientation.z = transform_stamped.transform.rotation.z;
+        pose.orientation.w = transform_stamped.transform.rotation.w;
+
+    } catch (tf2::TransformException &ex) {
+        RCLCPP_ERROR(this->get_logger(), "Could not get current robot pose: %s", ex.what());
+    }
+    return pose;
+}

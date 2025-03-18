@@ -19,9 +19,11 @@
   <depend>moveit_core</depend>
   <depend>moveit_visual_tools</depend>
 
+  <depend>tf2_ros</depend>
+
   <!-- Runtime Dependencies -->
   <exec_depend>ros2launch</exec_depend>
-  <exec_depend>tf2_ros</exec_depend>
+  <!-- <exec_depend>tf2_ros</exec_depend> -->
 
   <export>
     <build_type>ament_cmake</build_type>

@@ -36,19 +36,19 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 68,
+				"line" : 70,
 				"parent" : 0
 			},
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 80,
+				"line" : 82,
 				"parent" : 0
 			},
 			{
 				"command" : 5,
 				"file" : 0,
-				"line" : 91,
+				"line" : 93,
 				"parent" : 0
 			},
 			{
@@ -244,7 +244,7 @@
 				"libspline_follower_lib.a"
 			],
 			"targetId" : "spline_follower_lib::@6890427a1f51a3e7e1df",
-			"targetIndex" : 0,
+			"targetIndex" : 1,
 			"type" : "target"
 		},
 		{
@@ -253,10 +253,10 @@
 			"destination" : "lib/ur3_control",
 			"paths" : 
 			[
-				"spline_follower_node"
+				"spline_follower"
 			],
-			"targetId" : "spline_follower_node::@6890427a1f51a3e7e1df",
-			"targetIndex" : 1,
+			"targetId" : "spline_follower::@6890427a1f51a3e7e1df",
+			"targetIndex" : 0,
 			"type" : "target"
 		},
 		{

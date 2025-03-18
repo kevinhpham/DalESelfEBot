@@ -64,7 +64,7 @@ CMAKE_BINARY_DIR = /home/jarred/git/DalESelfEBot/ur3_control/build
 
 # The main recursive "all" target.
 all: CMakeFiles/spline_follower_lib.dir/all
-all: CMakeFiles/spline_follower_node.dir/all
+all: CMakeFiles/spline_follower.dir/all
 .PHONY : all
 
 # The main recursive "preinstall" target.
@@ -75,7 +75,7 @@ preinstall:
 clean: CMakeFiles/uninstall.dir/clean
 clean: CMakeFiles/ur3_control_uninstall.dir/clean
 clean: CMakeFiles/spline_follower_lib.dir/clean
-clean: CMakeFiles/spline_follower_node.dir/clean
+clean: CMakeFiles/spline_follower.dir/clean
 .PHONY : clean
 
 #=============================================================================
@@ -137,7 +137,7 @@ CMakeFiles/ur3_control_uninstall.dir/clean:
 CMakeFiles/spline_follower_lib.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/spline_follower_lib.dir/build.make CMakeFiles/spline_follower_lib.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/spline_follower_lib.dir/build.make CMakeFiles/spline_follower_lib.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/jarred/git/DalESelfEBot/ur3_control/build/CMakeFiles --progress-num=1,2 "Built target spline_follower_lib"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/jarred/git/DalESelfEBot/ur3_control/build/CMakeFiles --progress-num=3,4 "Built target spline_follower_lib"
 .PHONY : CMakeFiles/spline_follower_lib.dir/all
 
 # Build rule for subdir invocation for target.
@@ -157,30 +157,30 @@ CMakeFiles/spline_follower_lib.dir/clean:
 .PHONY : CMakeFiles/spline_follower_lib.dir/clean
 
 #=============================================================================
-# Target rules for target CMakeFiles/spline_follower_node.dir
+# Target rules for target CMakeFiles/spline_follower.dir
 
 # All Build rule for target.
-CMakeFiles/spline_follower_node.dir/all: CMakeFiles/spline_follower_lib.dir/all
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/spline_follower_node.dir/build.make CMakeFiles/spline_follower_node.dir/depend
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/spline_follower_node.dir/build.make CMakeFiles/spline_follower_node.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/jarred/git/DalESelfEBot/ur3_control/build/CMakeFiles --progress-num=3,4 "Built target spline_follower_node"
-.PHONY : CMakeFiles/spline_follower_node.dir/all
+CMakeFiles/spline_follower.dir/all: CMakeFiles/spline_follower_lib.dir/all
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/spline_follower.dir/build.make CMakeFiles/spline_follower.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/spline_follower.dir/build.make CMakeFiles/spline_follower.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/jarred/git/DalESelfEBot/ur3_control/build/CMakeFiles --progress-num=1,2 "Built target spline_follower"
+.PHONY : CMakeFiles/spline_follower.dir/all
 
 # Build rule for subdir invocation for target.
-CMakeFiles/spline_follower_node.dir/rule: cmake_check_build_system
+CMakeFiles/spline_follower.dir/rule: cmake_check_build_system
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/jarred/git/DalESelfEBot/ur3_control/build/CMakeFiles 4
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/spline_follower_node.dir/all
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/spline_follower.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/jarred/git/DalESelfEBot/ur3_control/build/CMakeFiles 0
-.PHONY : CMakeFiles/spline_follower_node.dir/rule
+.PHONY : CMakeFiles/spline_follower.dir/rule
 
 # Convenience name for target.
-spline_follower_node: CMakeFiles/spline_follower_node.dir/rule
-.PHONY : spline_follower_node
+spline_follower: CMakeFiles/spline_follower.dir/rule
+.PHONY : spline_follower
 
 # clean rule for target.
-CMakeFiles/spline_follower_node.dir/clean:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/spline_follower_node.dir/build.make CMakeFiles/spline_follower_node.dir/clean
-.PHONY : CMakeFiles/spline_follower_node.dir/clean
+CMakeFiles/spline_follower.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/spline_follower.dir/build.make CMakeFiles/spline_follower.dir/clean
+.PHONY : CMakeFiles/spline_follower.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.

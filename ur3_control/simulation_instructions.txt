@@ -1,6 +1,6 @@
 # Link Package to your ROS2 Workspace
 
-ln ~/git/DalESelfEBot/ur3_control ~/ros2_ws/src/ur3_control
+ln -s ~/git/DalESelfEBot/ur3_control ~/ros2_ws/src/ur3_control
 
 # Build Packages
 

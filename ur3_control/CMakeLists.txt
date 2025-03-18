@@ -9,6 +9,7 @@ find_package(moveit_ros_planning REQUIRED)
 find_package(moveit_ros_move_group REQUIRED)
 find_package(moveit_core REQUIRED)
 find_package(moveit_visual_tools REQUIRED)
+find_package(tf2_ros REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(yaml-cpp REQUIRED)
@@ -37,6 +38,7 @@ ament_target_dependencies(spline_follower_lib
   Eigen3
   nlohmann_json
   yaml-cpp
+  tf2_ros
 )
 
 # Ensure all required symbols are included by explicitly linking the library
@@ -47,13 +49,13 @@ target_link_libraries(spline_follower_lib
 )
 
 # Define executable for main
-add_executable(spline_follower_node src/main.cpp)
+add_executable(spline_follower src/main.cpp)
 
 # Link the main executable with the library
-target_link_libraries(spline_follower_node spline_follower_lib)
+target_link_libraries(spline_follower spline_follower_lib)
 
 # Link dependencies for the main executable
-ament_target_dependencies(spline_follower_node
+ament_target_dependencies(spline_follower
   rclcpp
   moveit_ros_planning_interface
   moveit_ros_planning
@@ -66,7 +68,7 @@ ament_target_dependencies(spline_follower_node
 
 # Install the library and executable
 install(
-  TARGETS spline_follower_lib spline_follower_node
+  TARGETS spline_follower_lib spline_follower
   DESTINATION lib/${PROJECT_NAME}
 )
 
