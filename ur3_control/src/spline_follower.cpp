@@ -15,7 +15,7 @@ void SplineFollower::on_activate() {
     move_group_ = std::make_shared<moveit::planning_interface::MoveGroupInterface>(
         node_shared_ptr, "ur_manipulator");
 
-    move_group_->startStateMonitor();  // Start state monitoring service
+    // move_group_->startStateMonitor();  // Start state monitoring service
     rclcpp::sleep_for(std::chrono::seconds(2));
 
     RCLCPP_INFO(this->get_logger(), "MoveGroupInterface initialized.");
@@ -30,21 +30,35 @@ void SplineFollower::on_activate() {
         return;
     }
 
-    runStateMachine();
-    // geometry_msgs::msg::Pose current_pose = getCurrentRobotPose();
+    move_group_->setPoseReferenceFrame("base_link");
+    RCLCPP_INFO(this->get_logger(), "Pose reference frame: %s", move_group_->getPoseReferenceFrame().c_str());
+    RCLCPP_INFO(this->get_logger(), "Planning frame: %s", move_group_->getPlanningFrame().c_str());
+    RCLCPP_INFO(this->get_logger(), "End effector link: %s", move_group_->getEndEffectorLink().c_str());
 
-    // std::cout << "Current Pose: x = " << current_pose.position.x << " y = " << current_pose.position.y 
-    // << " z = " << current_pose.position.z << std::endl;
 
-    // geometry_msgs::msg::Pose new_pose;
-    // new_pose.position.x = 0.5;
-    // new_pose.position.y = 0.5;
-    // new_pose.position.z = 0.5;
+    // runStateMachine();
+    geometry_msgs::msg::Pose current_pose = getCurrentRobotPose();
 
-    // std::vector<geometry_msgs::msg::Pose> path = 
-    //                 computeLinearInterpolationPath(current_pose, new_pose, 10);
+    // geometry_msgs::msg::PoseStamped current_pose = move_group_->getCurrentPose();
 
-    // executeTrajectory(path);
+    // std::cout << "Current Pose: x = " << current_pose.pose.position.x << " y = " << current_pose.pose.position.x 
+    // << " z = " << current_pose.pose.position.x << std::endl;
+
+    geometry_msgs::msg::Pose new_pose;
+    new_pose.position.x = 0.1;
+    new_pose.position.y = 0.1;
+    new_pose.position.z = 0.1;
+
+    std::vector<geometry_msgs::msg::Pose> path = 
+                    computeLinearInterpolationPath(current_pose, new_pose, 10);
+
+    executeTrajectory(path);
+
+    current_pose = getCurrentRobotPose();
+
+    std::cout << "Current Pose: x = " << current_pose.position.x << " y = " << current_pose.position.y 
+    << " z = " << current_pose.position.z << std::endl;
+
 
 }
 
@@ -283,11 +297,16 @@ bool SplineFollower::executeTrajectory(const std::vector<geometry_msgs::msg::Pos
     if (waypoints.empty()) return false;
 
     moveit_msgs::msg::RobotTrajectory trajectory;
-    double fraction = move_group_->computeCartesianPath(waypoints, 0.01, 0.0, trajectory);
+    double fraction = move_group_->computeCartesianPath(waypoints, 0.00001, 0.0, trajectory);
     // std::cout << "Made it here." << std::endl;
     // if (fraction < 0.95) return false;
 
     // std::cout << "Made it here." << std::endl;
+
+    if (fraction < 0.95) { 
+        RCLCPP_ERROR(this->get_logger(), "Only achieved %.2f%% of the path", fraction * 100);
+    }
+
 
     moveit::planning_interface::MoveGroupInterface::Plan plan;
     plan.trajectory_ = trajectory;
@@ -433,6 +452,16 @@ std::vector<geometry_msgs::msg::Pose> SplineFollower::computeLinearInterpolation
         interpolated_pose.orientation.y = interpolated_q.y();
         interpolated_pose.orientation.z = interpolated_q.z();
         interpolated_pose.orientation.w = interpolated_q.w();
+
+        // ✅ Check reachability
+        bool reachable = move_group_->setApproximateJointValueTarget(interpolated_pose);
+        if (reachable) {
+            RCLCPP_INFO(this->get_logger(), "Waypoint %d reachable at (x=%.3f, y=%.3f, z=%.3f)", 
+                        i, interpolated_pose.position.x, interpolated_pose.position.y, interpolated_pose.position.z);
+        } else {
+            RCLCPP_WARN(this->get_logger(), "Waypoint %d NOT reachable at (x=%.3f, y=%.3f, z=%.3f)", 
+                        i, interpolated_pose.position.x, interpolated_pose.position.y, interpolated_pose.position.z);
+        }
 
         waypoints.push_back(interpolated_pose);
     }
