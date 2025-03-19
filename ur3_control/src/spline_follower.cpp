@@ -11,11 +11,36 @@ tf_listener_(tf_buffer_){
 }
 
 void SplineFollower::on_activate() {
-    auto node_shared_ptr = shared_from_this();
-    move_group_ = std::make_shared<moveit::planning_interface::MoveGroupInterface>(
-        node_shared_ptr, "ur_manipulator");
 
-    // move_group_->startStateMonitor();  // Start state monitoring service
+    // // Create NodeOptions object
+    // rclcpp::NodeOptions node_options;
+    // node_options.automatically_declare_parameters_from_overrides(true);
+
+    // // Set use_sim_time to true using Parameter
+    // node_options.parameter_overrides(
+    //     {rclcpp::Parameter("use_sim_time", true)}
+    // );
+
+    // auto node_shared_ptr = shared_from_this();
+    // move_group_ = std::make_shared<moveit::planning_interface::MoveGroupInterface>(
+    //     node_shared_ptr, "ur_manipulator", node_options);
+
+    // ✅ Create node options and enable parameter overrides
+    rclcpp::NodeOptions node_options;
+    node_options.automatically_declare_parameters_from_overrides(true);
+    node_options.parameter_overrides(
+        {rclcpp::Parameter("use_sim_time", true)}
+    );
+
+    // ✅ Create a temporary node for MoveGroupInterface with these options
+    auto temp_node = std::make_shared<rclcpp::Node>("temp_move_group_node", node_options);
+
+    // ✅ Create the MoveGroupInterface using the temporary node
+    move_group_ = std::make_shared<moveit::planning_interface::MoveGroupInterface>(
+        temp_node, "ur_manipulator"
+    );
+
+    move_group_->startStateMonitor();  // Start state monitoring service
     rclcpp::sleep_for(std::chrono::seconds(2));
 
     RCLCPP_INFO(this->get_logger(), "MoveGroupInterface initialized.");
@@ -23,7 +48,7 @@ void SplineFollower::on_activate() {
     move_group_->setMaxVelocityScalingFactor(1.0);
     move_group_->setMaxAccelerationScalingFactor(1.0);
 
-    addGroundPlane();
+    // addGroundPlane();
 
     if (!loadSplines()) {
         RCLCPP_ERROR(this->get_logger(), "Failed to load splines. Exiting...");
@@ -41,8 +66,8 @@ void SplineFollower::on_activate() {
 
     // geometry_msgs::msg::PoseStamped current_pose = move_group_->getCurrentPose();
 
-    // std::cout << "Current Pose: x = " << current_pose.pose.position.x << " y = " << current_pose.pose.position.x 
-    // << " z = " << current_pose.pose.position.x << std::endl;
+    std::cout << "Current Pose: x = " << current_pose.position.x << " y = " << current_pose.position.x 
+    << " z = " << current_pose.position.x << std::endl;
 
     geometry_msgs::msg::Pose new_pose;
     new_pose.position.x = 0.1;
@@ -58,6 +83,68 @@ void SplineFollower::on_activate() {
 
     std::cout << "Current Pose: x = " << current_pose.position.x << " y = " << current_pose.position.y 
     << " z = " << current_pose.position.z << std::endl;
+
+    // // Create NodeOptions object
+    // rclcpp::NodeOptions node_options;
+    // node_options.automatically_declare_parameters_from_overrides(true);
+
+    // // Set use_sim_time to true using Parameter
+    // node_options.parameter_overrides(
+    //     {rclcpp::Parameter("use_sim_time", true)}
+    // );
+
+    // // Initialize ROS and create the Node
+    // auto const node = std::make_shared<rclcpp::Node>(
+    //     "hello_moveit",
+    //     rclcpp::NodeOptions().automatically_declare_parameters_from_overrides(true)
+    // );
+
+    // auto const node = std::make_shared<rclcpp::Node>(
+    //     "hello_moveit",
+    //     node_options
+    // );
+
+    // geometry_msgs::msg::Pose current_pose = getCurrentRobotPose();
+
+    // std::cout << "Current Pose: x = " << current_pose.position.x << " y = " << current_pose.position.x 
+    // << " z = " << current_pose.position.x << std::endl;
+
+
+    // // Create the MoveIt MoveGroup Interface
+    // using moveit::planning_interface::MoveGroupInterface;
+    // auto move_group_interface = MoveGroupInterface(node, "ur_manipulator");
+
+    // // Set a target Pose
+    // auto const target_pose = []{
+    // geometry_msgs::msg::Pose msg;
+    // msg.orientation.w = 1.0;
+    // msg.position.x = 0.28;
+    // msg.position.y = -0.2;
+    // msg.position.z = 0.5;
+    // return msg;
+    // }();
+    // move_group_interface.setPoseTarget(target_pose);
+    // move_group_interface.startStateMonitor();
+
+    // rclcpp::sleep_for(std::chrono::seconds(10));
+
+    // geometry_msgs::msg::PoseStamped pose = move_group_interface.getCurrentPose();
+
+    // std::cout << "Current Pose is: x = " << pose.pose.position.x << " y = " << pose.pose.position.y << " z = " << pose.pose.position.z << std::endl;
+
+    // // Create a plan to that target pose
+    // auto const [success, plan] = [&move_group_interface]{
+    // moveit::planning_interface::MoveGroupInterface::Plan msg;
+    // auto const ok = static_cast<bool>(move_group_interface.plan(msg));
+    // return std::make_pair(ok, msg);
+    // }();
+
+    // // Execute the plan
+    // if(success) {
+    // move_group_interface.execute(plan);
+    // } else {
+    // RCLCPP_ERROR(this->get_logger(), "Planning failed!");
+    // }
 
 
 }
@@ -453,15 +540,15 @@ std::vector<geometry_msgs::msg::Pose> SplineFollower::computeLinearInterpolation
         interpolated_pose.orientation.z = interpolated_q.z();
         interpolated_pose.orientation.w = interpolated_q.w();
 
-        // ✅ Check reachability
-        bool reachable = move_group_->setApproximateJointValueTarget(interpolated_pose);
-        if (reachable) {
-            RCLCPP_INFO(this->get_logger(), "Waypoint %d reachable at (x=%.3f, y=%.3f, z=%.3f)", 
-                        i, interpolated_pose.position.x, interpolated_pose.position.y, interpolated_pose.position.z);
-        } else {
-            RCLCPP_WARN(this->get_logger(), "Waypoint %d NOT reachable at (x=%.3f, y=%.3f, z=%.3f)", 
-                        i, interpolated_pose.position.x, interpolated_pose.position.y, interpolated_pose.position.z);
-        }
+        // // ✅ Check reachability
+        // bool reachable = move_group_->setApproximateJointValueTarget(interpolated_pose);
+        // if (reachable) {
+        //     RCLCPP_INFO(this->get_logger(), "Waypoint %d reachable at (x=%.3f, y=%.3f, z=%.3f)", 
+        //                 i, interpolated_pose.position.x, interpolated_pose.position.y, interpolated_pose.position.z);
+        // } else {
+        //     RCLCPP_WARN(this->get_logger(), "Waypoint %d NOT reachable at (x=%.3f, y=%.3f, z=%.3f)", 
+        //                 i, interpolated_pose.position.x, interpolated_pose.position.y, interpolated_pose.position.z);
+        // }
 
         waypoints.push_back(interpolated_pose);
     }

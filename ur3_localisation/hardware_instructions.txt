@@ -7,7 +7,7 @@ ping 192.168.0.250
 
 # Acquire your computers IP Address
 ifconfig
-192.168.1.107
+192.168.1.100
 
 # Update the Host IP and Host Name to your IP - Located at: URCaps > External Control (Top Left Corner)
 
