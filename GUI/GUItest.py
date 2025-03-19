@@ -24,12 +24,12 @@ class MainWindow(qtw.QWidget):
         self.layout().addWidget(my_entry)
 
         # Create a button
-        my_button = qtw.QPushButton('Take a selfie!', clicked = lambda: press_it())
+        my_button = qtw.QPushButton('want to know a secret!?', clicked = lambda: press_it())
         self.layout().addWidget(my_button)
 
         def press_it():
             # add name to lable
-            my_label.setText(f"{my_entry.text()} had sex with a dog")
+            my_label.setText(f"{my_entry.text()} is the best!")
             # Clear the entry box
             my_entry.setText("")
         
