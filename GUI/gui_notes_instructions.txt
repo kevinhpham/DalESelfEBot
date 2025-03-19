@@ -1,0 +1,10 @@
+Pythone virtual environment
+pip install virtualenv
+in GUI/python_virtual_environment created via virtualenv env
+in GUI
+start environment source env/bin/activate
+end deactivate
+
+install PyQt5   pip install PyQt5
+
+run your py file    python GUItest.py
