@@ -198,6 +198,19 @@ ur3_control_uninstall/fast:
 .PHONY : ur3_control_uninstall/fast
 
 #=============================================================================
+# Target rules for targets named spline_follower_lib
+
+# Build rule for target.
+spline_follower_lib: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 spline_follower_lib
+.PHONY : spline_follower_lib
+
+# fast build rule for target.
+spline_follower_lib/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/spline_follower_lib.dir/build.make CMakeFiles/spline_follower_lib.dir/build
+.PHONY : spline_follower_lib/fast
+
+#=============================================================================
 # Target rules for targets named spline_follower
 
 # Build rule for target.
@@ -210,12 +223,88 @@ spline_follower/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/spline_follower.dir/build.make CMakeFiles/spline_follower.dir/build
 .PHONY : spline_follower/fast
 
+#=============================================================================
+# Target rules for targets named test_tool_path_accuracy
+
+# Build rule for target.
+test_tool_path_accuracy: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_tool_path_accuracy
+.PHONY : test_tool_path_accuracy
+
+# fast build rule for target.
+test_tool_path_accuracy/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_tool_path_accuracy.dir/build.make CMakeFiles/test_tool_path_accuracy.dir/build
+.PHONY : test_tool_path_accuracy/fast
+
+#=============================================================================
+# Target rules for targets named test_tool_path_z_consistency
+
+# Build rule for target.
+test_tool_path_z_consistency: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_tool_path_z_consistency
+.PHONY : test_tool_path_z_consistency
+
+# fast build rule for target.
+test_tool_path_z_consistency/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_tool_path_z_consistency.dir/build.make CMakeFiles/test_tool_path_z_consistency.dir/build
+.PHONY : test_tool_path_z_consistency/fast
+
+#=============================================================================
+# Target rules for targets named gtest
+
+# Build rule for target.
+gtest: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 gtest
+.PHONY : gtest
+
+# fast build rule for target.
+gtest/fast:
+	$(MAKE) $(MAKESILENT) -f gtest/CMakeFiles/gtest.dir/build.make gtest/CMakeFiles/gtest.dir/build
+.PHONY : gtest/fast
+
+#=============================================================================
+# Target rules for targets named gtest_main
+
+# Build rule for target.
+gtest_main: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 gtest_main
+.PHONY : gtest_main
+
+# fast build rule for target.
+gtest_main/fast:
+	$(MAKE) $(MAKESILENT) -f gtest/CMakeFiles/gtest_main.dir/build.make gtest/CMakeFiles/gtest_main.dir/build
+.PHONY : gtest_main/fast
+
+src/main.o: src/main.cpp.o
+.PHONY : src/main.o
+
+# target to build an object file
+src/main.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/spline_follower.dir/build.make CMakeFiles/spline_follower.dir/src/main.cpp.o
+.PHONY : src/main.cpp.o
+
+src/main.i: src/main.cpp.i
+.PHONY : src/main.i
+
+# target to preprocess a source file
+src/main.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/spline_follower.dir/build.make CMakeFiles/spline_follower.dir/src/main.cpp.i
+.PHONY : src/main.cpp.i
+
+src/main.s: src/main.cpp.s
+.PHONY : src/main.s
+
+# target to generate assembly for a file
+src/main.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/spline_follower.dir/build.make CMakeFiles/spline_follower.dir/src/main.cpp.s
+.PHONY : src/main.cpp.s
+
 src/spline_follower.o: src/spline_follower.cpp.o
 .PHONY : src/spline_follower.o
 
 # target to build an object file
 src/spline_follower.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/spline_follower.dir/build.make CMakeFiles/spline_follower.dir/src/spline_follower.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/spline_follower_lib.dir/build.make CMakeFiles/spline_follower_lib.dir/src/spline_follower.cpp.o
 .PHONY : src/spline_follower.cpp.o
 
 src/spline_follower.i: src/spline_follower.cpp.i
@@ -223,7 +312,7 @@ src/spline_follower.i: src/spline_follower.cpp.i
 
 # target to preprocess a source file
 src/spline_follower.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/spline_follower.dir/build.make CMakeFiles/spline_follower.dir/src/spline_follower.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/spline_follower_lib.dir/build.make CMakeFiles/spline_follower_lib.dir/src/spline_follower.cpp.i
 .PHONY : src/spline_follower.cpp.i
 
 src/spline_follower.s: src/spline_follower.cpp.s
@@ -231,8 +320,56 @@ src/spline_follower.s: src/spline_follower.cpp.s
 
 # target to generate assembly for a file
 src/spline_follower.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/spline_follower.dir/build.make CMakeFiles/spline_follower.dir/src/spline_follower.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/spline_follower_lib.dir/build.make CMakeFiles/spline_follower_lib.dir/src/spline_follower.cpp.s
 .PHONY : src/spline_follower.cpp.s
+
+unit_testing/test_tool_path_accuracy.o: unit_testing/test_tool_path_accuracy.cpp.o
+.PHONY : unit_testing/test_tool_path_accuracy.o
+
+# target to build an object file
+unit_testing/test_tool_path_accuracy.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_tool_path_accuracy.dir/build.make CMakeFiles/test_tool_path_accuracy.dir/unit_testing/test_tool_path_accuracy.cpp.o
+.PHONY : unit_testing/test_tool_path_accuracy.cpp.o
+
+unit_testing/test_tool_path_accuracy.i: unit_testing/test_tool_path_accuracy.cpp.i
+.PHONY : unit_testing/test_tool_path_accuracy.i
+
+# target to preprocess a source file
+unit_testing/test_tool_path_accuracy.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_tool_path_accuracy.dir/build.make CMakeFiles/test_tool_path_accuracy.dir/unit_testing/test_tool_path_accuracy.cpp.i
+.PHONY : unit_testing/test_tool_path_accuracy.cpp.i
+
+unit_testing/test_tool_path_accuracy.s: unit_testing/test_tool_path_accuracy.cpp.s
+.PHONY : unit_testing/test_tool_path_accuracy.s
+
+# target to generate assembly for a file
+unit_testing/test_tool_path_accuracy.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_tool_path_accuracy.dir/build.make CMakeFiles/test_tool_path_accuracy.dir/unit_testing/test_tool_path_accuracy.cpp.s
+.PHONY : unit_testing/test_tool_path_accuracy.cpp.s
+
+unit_testing/test_tool_path_z_consistency.o: unit_testing/test_tool_path_z_consistency.cpp.o
+.PHONY : unit_testing/test_tool_path_z_consistency.o
+
+# target to build an object file
+unit_testing/test_tool_path_z_consistency.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_tool_path_z_consistency.dir/build.make CMakeFiles/test_tool_path_z_consistency.dir/unit_testing/test_tool_path_z_consistency.cpp.o
+.PHONY : unit_testing/test_tool_path_z_consistency.cpp.o
+
+unit_testing/test_tool_path_z_consistency.i: unit_testing/test_tool_path_z_consistency.cpp.i
+.PHONY : unit_testing/test_tool_path_z_consistency.i
+
+# target to preprocess a source file
+unit_testing/test_tool_path_z_consistency.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_tool_path_z_consistency.dir/build.make CMakeFiles/test_tool_path_z_consistency.dir/unit_testing/test_tool_path_z_consistency.cpp.i
+.PHONY : unit_testing/test_tool_path_z_consistency.cpp.i
+
+unit_testing/test_tool_path_z_consistency.s: unit_testing/test_tool_path_z_consistency.cpp.s
+.PHONY : unit_testing/test_tool_path_z_consistency.s
+
+# target to generate assembly for a file
+unit_testing/test_tool_path_z_consistency.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_tool_path_z_consistency.dir/build.make CMakeFiles/test_tool_path_z_consistency.dir/unit_testing/test_tool_path_z_consistency.cpp.s
+.PHONY : unit_testing/test_tool_path_z_consistency.cpp.s
 
 # Help Target
 help:
@@ -249,10 +386,24 @@ help:
 	@echo "... test"
 	@echo "... uninstall"
 	@echo "... ur3_control_uninstall"
+	@echo "... gtest"
+	@echo "... gtest_main"
 	@echo "... spline_follower"
+	@echo "... spline_follower_lib"
+	@echo "... test_tool_path_accuracy"
+	@echo "... test_tool_path_z_consistency"
+	@echo "... src/main.o"
+	@echo "... src/main.i"
+	@echo "... src/main.s"
 	@echo "... src/spline_follower.o"
 	@echo "... src/spline_follower.i"
 	@echo "... src/spline_follower.s"
+	@echo "... unit_testing/test_tool_path_accuracy.o"
+	@echo "... unit_testing/test_tool_path_accuracy.i"
+	@echo "... unit_testing/test_tool_path_accuracy.s"
+	@echo "... unit_testing/test_tool_path_z_consistency.o"
+	@echo "... unit_testing/test_tool_path_z_consistency.i"
+	@echo "... unit_testing/test_tool_path_z_consistency.s"
 .PHONY : help
 
 

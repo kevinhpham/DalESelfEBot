@@ -210,6 +210,32 @@ localisation_node/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/localisation_node.dir/build.make CMakeFiles/localisation_node.dir/build
 .PHONY : localisation_node/fast
 
+#=============================================================================
+# Target rules for targets named test1_four_locations_present
+
+# Build rule for target.
+test1_four_locations_present: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test1_four_locations_present
+.PHONY : test1_four_locations_present
+
+# fast build rule for target.
+test1_four_locations_present/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test1_four_locations_present.dir/build.make CMakeFiles/test1_four_locations_present.dir/build
+.PHONY : test1_four_locations_present/fast
+
+#=============================================================================
+# Target rules for targets named test2_location_accuracy
+
+# Build rule for target.
+test2_location_accuracy: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test2_location_accuracy
+.PHONY : test2_location_accuracy
+
+# fast build rule for target.
+test2_location_accuracy/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test2_location_accuracy.dir/build.make CMakeFiles/test2_location_accuracy.dir/build
+.PHONY : test2_location_accuracy/fast
+
 src/localisation_node.o: src/localisation_node.cpp.o
 .PHONY : src/localisation_node.o
 
@@ -234,6 +260,54 @@ src/localisation_node.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/localisation_node.dir/build.make CMakeFiles/localisation_node.dir/src/localisation_node.cpp.s
 .PHONY : src/localisation_node.cpp.s
 
+unit_testing/test1_four_locations_present.o: unit_testing/test1_four_locations_present.cpp.o
+.PHONY : unit_testing/test1_four_locations_present.o
+
+# target to build an object file
+unit_testing/test1_four_locations_present.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test1_four_locations_present.dir/build.make CMakeFiles/test1_four_locations_present.dir/unit_testing/test1_four_locations_present.cpp.o
+.PHONY : unit_testing/test1_four_locations_present.cpp.o
+
+unit_testing/test1_four_locations_present.i: unit_testing/test1_four_locations_present.cpp.i
+.PHONY : unit_testing/test1_four_locations_present.i
+
+# target to preprocess a source file
+unit_testing/test1_four_locations_present.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test1_four_locations_present.dir/build.make CMakeFiles/test1_four_locations_present.dir/unit_testing/test1_four_locations_present.cpp.i
+.PHONY : unit_testing/test1_four_locations_present.cpp.i
+
+unit_testing/test1_four_locations_present.s: unit_testing/test1_four_locations_present.cpp.s
+.PHONY : unit_testing/test1_four_locations_present.s
+
+# target to generate assembly for a file
+unit_testing/test1_four_locations_present.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test1_four_locations_present.dir/build.make CMakeFiles/test1_four_locations_present.dir/unit_testing/test1_four_locations_present.cpp.s
+.PHONY : unit_testing/test1_four_locations_present.cpp.s
+
+unit_testing/test2_location_accuracy.o: unit_testing/test2_location_accuracy.cpp.o
+.PHONY : unit_testing/test2_location_accuracy.o
+
+# target to build an object file
+unit_testing/test2_location_accuracy.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test2_location_accuracy.dir/build.make CMakeFiles/test2_location_accuracy.dir/unit_testing/test2_location_accuracy.cpp.o
+.PHONY : unit_testing/test2_location_accuracy.cpp.o
+
+unit_testing/test2_location_accuracy.i: unit_testing/test2_location_accuracy.cpp.i
+.PHONY : unit_testing/test2_location_accuracy.i
+
+# target to preprocess a source file
+unit_testing/test2_location_accuracy.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test2_location_accuracy.dir/build.make CMakeFiles/test2_location_accuracy.dir/unit_testing/test2_location_accuracy.cpp.i
+.PHONY : unit_testing/test2_location_accuracy.cpp.i
+
+unit_testing/test2_location_accuracy.s: unit_testing/test2_location_accuracy.cpp.s
+.PHONY : unit_testing/test2_location_accuracy.s
+
+# target to generate assembly for a file
+unit_testing/test2_location_accuracy.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test2_location_accuracy.dir/build.make CMakeFiles/test2_location_accuracy.dir/unit_testing/test2_location_accuracy.cpp.s
+.PHONY : unit_testing/test2_location_accuracy.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -250,9 +324,17 @@ help:
 	@echo "... uninstall"
 	@echo "... ur3_localisation_uninstall"
 	@echo "... localisation_node"
+	@echo "... test1_four_locations_present"
+	@echo "... test2_location_accuracy"
 	@echo "... src/localisation_node.o"
 	@echo "... src/localisation_node.i"
 	@echo "... src/localisation_node.s"
+	@echo "... unit_testing/test1_four_locations_present.o"
+	@echo "... unit_testing/test1_four_locations_present.i"
+	@echo "... unit_testing/test1_four_locations_present.s"
+	@echo "... unit_testing/test2_location_accuracy.o"
+	@echo "... unit_testing/test2_location_accuracy.i"
+	@echo "... unit_testing/test2_location_accuracy.s"
 .PHONY : help
 
 

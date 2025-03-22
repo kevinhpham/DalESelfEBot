@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/spline_follower.dir/src/spline_follower.cpp.o"
-  "CMakeFiles/spline_follower.dir/src/spline_follower.cpp.o.d"
+  "CMakeFiles/spline_follower.dir/src/main.cpp.o"
+  "CMakeFiles/spline_follower.dir/src/main.cpp.o.d"
   "spline_follower"
   "spline_follower.pdb"
 )
