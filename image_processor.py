@@ -34,9 +34,9 @@ def posterize(image, k):
     return res2
 
 # Load the pre-trained Haar Cascade classifier for face detection
-face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+face_cascade = cv2.CascadeClassifier('/home/jarred/git/DalESelfEBot/haarcascade_frontalface_default.xml')
 
-cap = cv2.VideoCapture(1) #Change the index to that of your webcam
+cap = cv2.VideoCapture(0) #Change the index to that of your webcam
 if cap:
     while True:
         # Capture frame-by-frame

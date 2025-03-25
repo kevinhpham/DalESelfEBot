@@ -25,6 +25,35 @@ void SplineFollower::on_activate() {
     // move_group_ = std::make_shared<moveit::planning_interface::MoveGroupInterface>(
     //     node_shared_ptr, "ur_manipulator", node_options);
 
+    // auto node = std::make_shared<rclcpp::Node>("hello_moveit");
+
+    // // Point this to your kinematics.yaml
+    // std::string yaml_file = "/home/jarred/git/DalESelfEBot/ur3_control/config/kinematics.yaml";
+    // load_parameters_from_yaml(node, yaml_file);
+
+    // rclcpp::spin(node);
+
+    // auto const node = std::make_shared<rclcpp::Node>(
+    //     "hello_moveit",
+    //     rclcpp::NodeOptions().automatically_declare_parameters_from_overrides(true)
+    // );
+
+    // Create a ROS logger
+    // auto const logger = rclcpp::get_logger("hello_moveit");
+
+    // // Create the MoveIt MoveGroup Interface
+    // using moveit::planning_interface::MoveGroupInterface;
+    // auto move_group_interface = MoveGroupInterface(node, "ur_manipulator");
+
+    // // Get the current end-effector pose
+    // auto const end_effector_pose = move_group_interface.getCurrentPose();
+    // // Log the current end-effector pose
+    // RCLCPP_INFO(logger, "End-effector pose: %f %f %f",
+    //     end_effector_pose.pose.position.x,
+    //     end_effector_pose.pose.position.y,
+    //     end_effector_pose.pose.position.z
+    // );
+
     // ✅ Create node options and enable parameter overrides
     rclcpp::NodeOptions node_options;
     node_options.automatically_declare_parameters_from_overrides(true);
@@ -40,49 +69,93 @@ void SplineFollower::on_activate() {
         temp_node, "ur_manipulator"
     );
 
-    move_group_->startStateMonitor();  // Start state monitoring service
-    rclcpp::sleep_for(std::chrono::seconds(2));
 
-    RCLCPP_INFO(this->get_logger(), "MoveGroupInterface initialized.");
-    move_group_->setPlannerId("RRTConnectkConfigDefault");
-    move_group_->setMaxVelocityScalingFactor(1.0);
-    move_group_->setMaxAccelerationScalingFactor(1.0);
+
+    move_group_->startStateMonitor();  // Start state monitoring service
+    // rclcpp::sleep_for(std::chrono::seconds(2));
+
+    // RCLCPP_INFO(this->get_logger(), "MoveGroupInterface initialized.");
+    // move_group_->setPlannerId("RRTConnectkConfigDefault");
+    // move_group_->setMaxVelocityScalingFactor(1.0);
+    // move_group_->setMaxAccelerationScalingFactor(1.0);
 
     // addGroundPlane();
 
-    if (!loadSplines()) {
-        RCLCPP_ERROR(this->get_logger(), "Failed to load splines. Exiting...");
-        return;
-    }
+    // if (!loadSplines()) {
+    //     RCLCPP_ERROR(this->get_logger(), "Failed to load splines. Exiting...");
+    //     return;
+    // }
 
-    move_group_->setPoseReferenceFrame("base_link");
-    RCLCPP_INFO(this->get_logger(), "Pose reference frame: %s", move_group_->getPoseReferenceFrame().c_str());
-    RCLCPP_INFO(this->get_logger(), "Planning frame: %s", move_group_->getPlanningFrame().c_str());
-    RCLCPP_INFO(this->get_logger(), "End effector link: %s", move_group_->getEndEffectorLink().c_str());
+    // move_group_->setPoseReferenceFrame("base_link");
+    // RCLCPP_INFO(this->get_logger(), "Pose reference frame: %s", move_group_->getPoseReferenceFrame().c_str());
+    // RCLCPP_INFO(this->get_logger(), "Planning frame: %s", move_group_->getPlanningFrame().c_str());
+    // RCLCPP_INFO(this->get_logger(), "End effector link: %s", move_group_->getEndEffectorLink().c_str());
 
 
     // runStateMachine();
-    geometry_msgs::msg::Pose current_pose = getCurrentRobotPose();
+    // generateDrawingTrajectory();
+    // move_group_->execute(drawing_trajectory_);
 
-    // geometry_msgs::msg::PoseStamped current_pose = move_group_->getCurrentPose();
+    // rclcpp::sleep_for(std::chrono::seconds(10));
+    // geometry_msgs::msg::Pose tf_pose = getCurrentRobotPose();
 
-    std::cout << "Current Pose: x = " << current_pose.position.x << " y = " << current_pose.position.x 
-    << " z = " << current_pose.position.x << std::endl;
+    // moveit::core::RobotStatePtr current_state = move_group_->getCurrentState(5);
+    // current_state->update(true);
 
-    geometry_msgs::msg::Pose new_pose;
-    new_pose.position.x = 0.1;
-    new_pose.position.y = 0.1;
-    new_pose.position.z = 0.1;
+    // geometry_msgs::msg::Pose offset;
+    // offset.position.x = -0.45625;
+    // offset.position.y = 0;
+    // offset.position.z = 0.62745;
+    
+    // offset.orientation.w = 0.707107;
+    // offset.orientation.x = -0.707107;
+    // offset.orientation.y = -0.706543912;
+    // offset.orientation.z = -0.706543912;
 
-    std::vector<geometry_msgs::msg::Pose> path = 
-                    computeLinearInterpolationPath(current_pose, new_pose, 10);
+    // std::string end_eff = move_group_->getEndEffectorLink();
 
-    executeTrajectory(path);
+    // std::cout << "End Effector Link = " << end_eff << std::endl;
 
-    current_pose = getCurrentRobotPose();
+    geometry_msgs::msg::PoseStamped current_pose = move_group_->getCurrentPose();
 
-    std::cout << "Current Pose: x = " << current_pose.position.x << " y = " << current_pose.position.y 
-    << " z = " << current_pose.position.z << std::endl;
+    // first_call.pose.position.x = first_call.pose.position.x + offset.position.x;
+    // first_call.pose.position.y = first_call.pose.position.y + offset.position.y;
+    // first_call.pose.position.z = first_call.pose.position.z + offset.position.z;
+
+    // first_call.pose.orientation.w = first_call.pose.orientation.w + offset.orientation.w;
+    // first_call.pose.orientation.x = first_call.pose.orientation.x + offset.orientation.x;
+    // first_call.pose.orientation.y = first_call.pose.orientation.y + offset.orientation.y;
+    // first_call.pose.orientation.z = first_call.pose.orientation.z + offset.orientation.z;
+
+    std::cout << "Pose: x = " << current_pose.pose.position.x << " y = " << current_pose.pose.position.y 
+    << " z = " << current_pose.pose.position.z << std::endl;
+
+    // std::cout << "Quaternion: w = " << first_call.pose.orientation.w << " x = " << first_call.pose.orientation.x 
+    // << " y = " << first_call.pose.orientation.y << " z " << first_call.pose.orientation.z << std::endl;
+
+
+    // geometry_msgs::msg::PoseStamped second_call = move_group_->getCurrentPose(); 
+
+    // std::cout << "Second Call Pose: x = " << second_call.pose.position.x << " y = " << second_call.pose.position.y 
+    // << " z = " << second_call.pose.position.z << std::endl;
+
+    // std::cout << "TF Pose: x = " << tf_pose.position.x << " y = " << tf_pose.position.x 
+    // << " z = " << tf_pose.position.x << std::endl;
+
+    // geometry_msgs::msg::Pose new_pose;
+    // new_pose.position.x = 0.4;
+    // new_pose.position.y = 0.1;
+    // new_pose.position.z = 0.5;
+
+    // std::vector<geometry_msgs::msg::Pose> path = 
+    //                 computeLinearInterpolationPath(current_pose.pose, new_pose, 10);
+
+    // executeTrajectory(path);
+
+    // current_pose = getCurrentRobotPose();
+
+    // std::cout << "Move Group Pose: x = " << move_group_pose.pose.position.x << " y = " << move_group_pose.pose.position.y 
+    // << " z = " << move_group_pose.pose.position.z << std::endl;
 
     // // Create NodeOptions object
     // rclcpp::NodeOptions node_options;
@@ -114,7 +187,7 @@ void SplineFollower::on_activate() {
     // using moveit::planning_interface::MoveGroupInterface;
     // auto move_group_interface = MoveGroupInterface(node, "ur_manipulator");
 
-    // // Set a target Pose
+    // Set a target Pose
     // auto const target_pose = []{
     // geometry_msgs::msg::Pose msg;
     // msg.orientation.w = 1.0;
@@ -123,29 +196,43 @@ void SplineFollower::on_activate() {
     // msg.position.z = 0.5;
     // return msg;
     // }();
-    // move_group_interface.setPoseTarget(target_pose);
-    // move_group_interface.startStateMonitor();
+    // move_group_->setPoseTarget(target_pose);
+    // move_group_->startStateMonitor();
 
-    // rclcpp::sleep_for(std::chrono::seconds(10));
-
-    // geometry_msgs::msg::PoseStamped pose = move_group_interface.getCurrentPose();
-
-    // std::cout << "Current Pose is: x = " << pose.pose.position.x << " y = " << pose.pose.position.y << " z = " << pose.pose.position.z << std::endl;
-
-    // // Create a plan to that target pose
-    // auto const [success, plan] = [&move_group_interface]{
     // moveit::planning_interface::MoveGroupInterface::Plan msg;
-    // auto const ok = static_cast<bool>(move_group_interface.plan(msg));
-    // return std::make_pair(ok, msg);
-    // }();
+    // auto const ok = static_cast<bool>(move_group_->plan(msg));
+    // auto const [success, plan] = std::make_pair(ok, msg);
 
     // // Execute the plan
     // if(success) {
-    // move_group_interface.execute(plan);
+    //     move_group_->execute(plan);
     // } else {
     // RCLCPP_ERROR(this->get_logger(), "Planning failed!");
     // }
+    // geometry_msgs::msg::Pose target;
+    // target.position.x = 0.28;
+    // target.position.y = -0.2;
+    // target.position.z = 0.5;
 
+    // moveToPose(target);
+
+
+}
+
+void SplineFollower::moveToPose(geometry_msgs::msg::Pose pose){
+    move_group_->setPoseTarget(pose);
+    move_group_->startStateMonitor();
+
+    moveit::planning_interface::MoveGroupInterface::Plan msg;
+    auto const ok = static_cast<bool>(move_group_->plan(msg));
+    auto const [success, plan] = std::make_pair(ok, msg);
+
+    // Execute the plan
+    if(success) {
+        move_group_->execute(plan);
+    } else {
+    RCLCPP_ERROR(this->get_logger(), "Planning failed!");
+    }
 
 }
 
@@ -161,19 +248,21 @@ void SplineFollower::runStateMachine() {
                 << safe_start_pose_.position.z << std::endl;
 
                 // ✅ Get the current pose of the robot
-                geometry_msgs::msg::Pose current_pose = getCurrentRobotPose();
+                // geometry_msgs::msg::Pose current_pose = getCurrentRobotPose();
 
-                std::cout << "Current Pose: x = " << current_pose.position.x << " y = " << current_pose.position.y 
-                << " z = " << current_pose.position.z << std::endl;
+                // std::cout << "Current Pose: x = " << current_pose.position.x << " y = " << current_pose.position.y 
+                // << " z = " << current_pose.position.z << std::endl;
 
                 geometry_msgs::msg::Pose next_pose = safe_start_pose_;
 
-                // ✅ Compute a straight-line interpolated path to the safe start pose
-                std::vector<geometry_msgs::msg::Pose> path_to_safe_start = 
-                    computeLinearInterpolationPath(current_pose, next_pose, 10);
+                moveToPose(next_pose);
 
-                // ✅ Execute the trajectory to move safely to the start pose
-                executeTrajectory(path_to_safe_start);
+                // // ✅ Compute a straight-line interpolated path to the safe start pose
+                // std::vector<geometry_msgs::msg::Pose> path_to_safe_start = 
+                //     computeLinearInterpolationPath(current_pose, next_pose, 10);
+
+                // // ✅ Execute the trajectory to move safely to the start pose
+                // executeTrajectory(path_to_safe_start);
 
                 // ✅ Once the move is complete, transition to the next state
                 state_ = State::MOVE_TO_INTERMEDIATE_POS;
@@ -190,26 +279,28 @@ void SplineFollower::runStateMachine() {
                     json first_waypoint = next_spline["waypoints"][0];
 
                     // ✅ Calculate the intermediate pose (100mm above the first waypoint)
-                    geometry_msgs::msg::Pose intermediate_pose;
-                    intermediate_pose.position.x = first_waypoint[0].get<double>();
-                    intermediate_pose.position.y = first_waypoint[1].get<double>();
-                    intermediate_pose.position.z = first_waypoint[2].get<double>() + 0.1;  // 100mm above
+                    // geometry_msgs::msg::Pose intermediate_pose;
+                    intermediate_pose_.position.x = first_waypoint[0].get<double>();
+                    intermediate_pose_.position.y = first_waypoint[1].get<double>();
+                    intermediate_pose_.position.z = first_waypoint[2].get<double>() + 0.1;  // 100mm above
                     
                     // ✅ Ensure the orientation is pointing straight down
-                    intermediate_pose.orientation.x = 0.0;
-                    intermediate_pose.orientation.y = 1.0;
-                    intermediate_pose.orientation.z = 0.0;
-                    intermediate_pose.orientation.w = 0.0;
+                    intermediate_pose_.orientation.x = 0.0;
+                    intermediate_pose_.orientation.y = 1.0;
+                    intermediate_pose_.orientation.z = 0.0;
+                    intermediate_pose_.orientation.w = 0.0;
 
-                    // ✅ Get the current pose of the robot
-                    geometry_msgs::msg::Pose current_pose = getCurrentRobotPose();
+                    moveToPose(intermediate_pose_);
+
+                    // // ✅ Get the current pose of the robot
+                    // geometry_msgs::msg::Pose current_pose = getCurrentRobotPose();
 
                     // ✅ Compute a straight-line interpolated path to the intermediate poses
-                    std::vector<geometry_msgs::msg::Pose> path_to_intermediate =
-                        computeLinearInterpolationPath(current_pose, intermediate_pose, 100);
+                    // std::vector<geometry_msgs::msg::Pose> path_to_intermediate =
+                    //     computeLinearInterpolationPath(current_pose, intermediate_pose, 100);
 
-                    // ✅ Execute the trajectory to move to the intermediate pose
-                    executeTrajectory(path_to_intermediate);
+                    // // ✅ Execute the trajectory to move to the intermediate pose
+                    // executeTrajectory(path_to_intermediate);
 
                     // ✅ Move to the next state once the move is complete
                     state_ = State::MOVE_TO_CANVAS;
@@ -226,19 +317,21 @@ void SplineFollower::runStateMachine() {
                 // ✅ Calculate the average Z position of the canvas
                 double canvas_z = calculateAverageCanvasHeight();
 
-                // ✅ Get the current pose of the robot
-                geometry_msgs::msg::Pose current_pose = getCurrentRobotPose();
+                // // ✅ Get the current pose of the robot
+                // geometry_msgs::msg::Pose current_pose = getCurrentRobotPose();
 
                 // ✅ Set the target pose (same x, y as current pose, but at canvas height)
-                geometry_msgs::msg::Pose canvas_pose = current_pose;
-                canvas_pose.position.z = canvas_z;  // Move to the canvas surface
+                canvas_pose_ = intermediate_pose_;
+                canvas_pose_.position.z = canvas_z;  // Move to the canvas surface
 
-                // ✅ Compute a straight-line interpolated path to the canvas
-                std::vector<geometry_msgs::msg::Pose> path_to_canvas =
-                    computeLinearInterpolationPath(current_pose, canvas_pose, 10);
+                moveToPose(canvas_pose_);
 
-                // ✅ Execute the trajectory to move to the canvas
-                executeTrajectory(path_to_canvas);
+                // // ✅ Compute a straight-line interpolated path to the canvas
+                // std::vector<geometry_msgs::msg::Pose> path_to_canvas =
+                //     computeLinearInterpolationPath(current_pose, canvas_pose, 10);
+
+                // // ✅ Execute the trajectory to move to the canvas
+                // executeTrajectory(path_to_canvas);
 
                 // ✅ Move to next state to start drawing
                 state_ = State::MOVE_THROUGH_DRAWING_TRAJECTORY;
@@ -246,33 +339,41 @@ void SplineFollower::runStateMachine() {
             }
 
             case State::MOVE_THROUGH_DRAWING_TRAJECTORY:
-                if (executeTrajectory(current_trajectory_)) {
-                    current_spline_index_++;
-                    state_ = State::MOVE_OFF_CANVAS;
-                } else {
-                    RCLCPP_ERROR(this->get_logger(), "Failed to execute drawing trajectory.");
-                    state_ = State::STOP;
-                }
+                // generateDrawingTrajectory();
+                // if (executeTrajectory(current_trajectory_)) {
+                //     current_spline_index_++;
+                //     state_ = State::MOVE_OFF_CANVAS;
+                // } else {
+                //     RCLCPP_ERROR(this->get_logger(), "Failed to execute drawing trajectory.");
+                //     state_ = State::STOP;
+                // }
+                std::cout << "Reached here" << std::endl;
+                generateDrawingTrajectory();
+                move_group_->execute(drawing_trajectory_);
+                current_spline_index_++;
+                state_ = State::MOVE_OFF_CANVAS;
                 break;
 
             case State::MOVE_OFF_CANVAS:
             {
-                // ✅ Get the current pose of the robot
-                geometry_msgs::msg::Pose current_pose = getCurrentRobotPose();
+                // // ✅ Get the current pose of the robot
+                // geometry_msgs::msg::Pose current_pose = getCurrentRobotPose();
             
                 // ✅ Get the canvas height
                 double canvas_z = calculateAverageCanvasHeight();
             
                 // ✅ Compute the safe lifted pose (100mm above the canvas)
-                geometry_msgs::msg::Pose lifted_pose = current_pose;
+                geometry_msgs::msg::Pose lifted_pose = canvas_pose_;
                 lifted_pose.position.z = canvas_z + 0.1;  // Move 100mm up
+
+                moveToPose(canvas_pose_);
             
-                // ✅ Compute a straight-line interpolated trajectory
-                std::vector<geometry_msgs::msg::Pose> path_off_canvas =
-                    computeLinearInterpolationPath(current_pose, lifted_pose, 10);
+                // // ✅ Compute a straight-line interpolated trajectory
+                // std::vector<geometry_msgs::msg::Pose> path_off_canvas =
+                //     computeLinearInterpolationPath(current_pose, lifted_pose, 10);
             
                 // ✅ Execute the trajectory to lift off the canvas
-                executeTrajectory(path_off_canvas);
+                // executeTrajectory(path_off_canvas);
             
                 // ✅ Move to the next state (going to the next spline or stopping)
                 current_spline_index_++;
@@ -286,8 +387,8 @@ void SplineFollower::runStateMachine() {
             }                
 
             case State::STOP:
-                moveToSafeEndPose();
-                stopExecution();
+                // moveToSafeEndPose();
+                // stopExecution();
                 RCLCPP_INFO(this->get_logger(), "All splines completed. Stopping MoveIt and shutting down...");
                 // rclcpp::shutdown();
                 return;
@@ -306,7 +407,7 @@ void SplineFollower::addGroundPlane() {
     ground_shape.dimensions = {10.0, 10.0, 0.01};
 
     geometry_msgs::msg::Pose ground_pose;
-    ground_pose.position.z = -0.005;
+    ground_pose.position.z = -0.01;
 
     ground.primitives.push_back(ground_shape);
     ground.primitive_poses.push_back(ground_pose);
@@ -597,3 +698,28 @@ geometry_msgs::msg::Pose SplineFollower::getCurrentRobotPose() {
     }
     return pose;
 }
+
+// void SplineFollower::load_parameters_from_yaml(std::shared_ptr<rclcpp::Node> node, const std::string &yaml_file)
+// {
+//     YAML::Node yaml = YAML::LoadFile(yaml_file);
+//     for (auto it = yaml.begin(); it != yaml.end(); ++it)
+//     {
+//         const auto &param_name = it->first.as<std::string>();
+//         const auto &param_value = it->second;
+
+//         if (param_value.IsScalar())
+//         {
+//             node->set_parameter(rclcpp::Parameter(param_name, param_value.as<std::string>()));
+//         }
+//         else if (param_value.IsSequence())
+//         {
+//             std::vector<double> values;
+//             for (const auto &val : param_value)
+//             {
+//                 values.push_back(val.as<double>());
+//             }
+//             node->set_parameter(rclcpp::Parameter(param_name, values));
+//         }
+//         // Add more cases if you expect more complex structures
+//     }
+// }

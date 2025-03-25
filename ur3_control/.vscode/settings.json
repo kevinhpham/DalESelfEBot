@@ -76,6 +76,9 @@
         "typeinfo": "cpp",
         "valarray": "cpp",
         "variant": "cpp",
-        "__nullptr": "cpp"
+        "__nullptr": "cpp",
+        "__functional_03": "cpp",
+        "target": "cpp",
+        "__node_handle": "cpp"
     }
 }
