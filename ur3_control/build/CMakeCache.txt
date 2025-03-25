@@ -492,9 +492,6 @@ geometry_msgs_DIR:PATH=/opt/ros/humble/share/geometry_msgs/cmake
 //The directory containing a CMake configuration file for kdl_parser.
 kdl_parser_DIR:PATH=/opt/ros/humble/share/kdl_parser/cmake
 
-//The directory containing a CMake configuration file for launch.
-launch_DIR:PATH=launch_DIR-NOTFOUND
-
 //The directory containing a CMake configuration file for libcurl_vendor.
 libcurl_vendor_DIR:PATH=/opt/ros/humble/share/libcurl_vendor/cmake
 

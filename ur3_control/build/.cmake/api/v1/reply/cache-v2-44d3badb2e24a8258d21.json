@@ -3438,18 +3438,6 @@
 			"value" : "/opt/ros/humble/share/kdl_parser/cmake"
 		},
 		{
-			"name" : "launch_DIR",
-			"properties" : 
-			[
-				{
-					"name" : "HELPSTRING",
-					"value" : "The directory containing a CMake configuration file for launch."
-				}
-			],
-			"type" : "PATH",
-			"value" : "launch_DIR-NOTFOUND"
-		},
-		{
 			"name" : "libcurl_vendor_DIR",
 			"properties" : 
 			[
