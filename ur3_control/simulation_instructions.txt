@@ -10,11 +10,11 @@ source install/setup.bash
 
 # Launch Simulated UR3
 
-ros2 launch ur_robot_driver ur_control.launch.py ur_type:=ur3e use_fake_hardware:=true launch_rviz:=false robot_ip:=0.0.0.0 initial_joint_controller:=joint_trajectory_controller
+ros2 launch ur_robot_driver ur_control.launch.py ur_type:=ur3e use_fake_hardware:=true launch_rviz:=true robot_ip:=0.0.0.0
 
 # Launch MoveIt
 
-ros2 launch ur_moveit_config ur_moveit.launch.py ur_type:=ur3e launch_rviz:=true
+ros2 launch ur_moveit_config ur_moveit.launch.py ur_type:=ur3e launch_rviz:=false
 
 # Launch Control Node
 

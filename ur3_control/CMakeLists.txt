@@ -8,11 +8,13 @@ find_package(moveit_ros_planning_interface REQUIRED)
 find_package(moveit_ros_planning REQUIRED)
 find_package(moveit_ros_move_group REQUIRED)
 find_package(moveit_core REQUIRED)
-find_package(moveit_visual_tools REQUIRED)
+# find_package(moveit_visual_tools REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(yaml-cpp REQUIRED)
+# find_package(launch REQUIRED)
+# find_package(launch_ros REQUIRED)
 
 # Ensure include directories
 include_directories(
@@ -34,7 +36,7 @@ ament_target_dependencies(spline_follower_lib
   moveit_ros_planning_interface
   moveit_ros_planning
   moveit_core
-  moveit_visual_tools
+  # moveit_visual_tools
   Eigen3
   nlohmann_json
   yaml-cpp
@@ -60,7 +62,7 @@ ament_target_dependencies(spline_follower
   moveit_ros_planning_interface
   moveit_ros_planning
   moveit_core
-  moveit_visual_tools
+  # moveit_visual_tools
   Eigen3
   nlohmann_json
   yaml-cpp
@@ -88,6 +90,11 @@ install(DIRECTORY config
 #   DIRECTORY models
 #   DESTINATION share/${PROJECT_NAME}/
 # )
+
+install(
+  DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME}/
+)
 
 ament_export_dependencies(rosidl_default_runtime)
 ament_package()
