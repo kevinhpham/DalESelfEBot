@@ -29,7 +29,7 @@ class MainWindow(qtw.QWidget):
 
         def press_it():
             # add name to lable
-            my_label.setText(f"{my_entry.text()} is the best!")
+            my_label.setText(f"{my_entry.text()} well to dal E Selfie bot!")
             # Clear the entry box
             my_entry.setText("")
         
