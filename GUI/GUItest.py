@@ -24,12 +24,32 @@ class MainWindow(qtw.QWidget):
         self.layout().addWidget(my_entry)
 
         # Create a button
-        my_button = qtw.QPushButton('TEST GUI!?', clicked = lambda: press_it())
+        my_button = qtw.QPushButton('Take Photo', clicked = lambda: press_take())
         self.layout().addWidget(my_button)
 
-        def press_it():
+        # Create a button
+        my_button = qtw.QPushButton('Process Photo', clicked = lambda: press_process())
+        self.layout().addWidget(my_button)
+
+        # Create a button
+        my_button = qtw.QPushButton('Start Drawing', clicked = lambda: press_draw())
+        self.layout().addWidget(my_button)
+
+        def press_take():
             # add name to lable
-            my_label.setText(f"{my_entry.text()} welcome to dal E Selfie bot!")
+            my_label.setText(f"{my_entry.text()} Photo taken!")
+            # Clear the entry box
+            my_entry.setText("")
+
+        def press_process():
+            # add name to lable
+            my_label.setText(f"{my_entry.text()} Photo processing!")
+            # Clear the entry box
+            my_entry.setText("")
+
+        def press_draw():
+            # add name to lable
+            my_label.setText(f"{my_entry.text()} Photo drawing!")
             # Clear the entry box
             my_entry.setText("")
         
