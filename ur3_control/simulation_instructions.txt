@@ -16,6 +16,8 @@ ros2 launch ur_robot_driver ur_control.launch.py ur_type:=ur3e use_fake_hardware
 
 ros2 launch ur_moveit_config ur_moveit.launch.py ur_type:=ur3e launch_rviz:=false
 
+ros2 launch ur3_control moveit_stack.launch.py ur_type:=ur3e launch_rviz:=false
+
 # Launch Control Node
 
 ros2 run ur3_control spline_follower

@@ -30,7 +30,7 @@ void SplineFollower::addGroundPlane() {
 }
 
 bool SplineFollower::loadSplines() {
-    std::ifstream file("/home/jarred/git/DalESelfEBot/ur3_control/config/drawing_path.json");
+    std::ifstream file("/home/jarred/git/DalESelfEBot/ur3_control/config/circle_waypoints.json");
     if (!file) {
         RCLCPP_ERROR(this->get_logger(), "Could not open spline JSON file.");
         return false;
@@ -116,8 +116,6 @@ const std::vector<geometry_msgs::msg::Pose> SplineFollower::computeLinearInterpo
 
         waypoints.push_back(interpolated_pose);
     }
-
-    std::cout << "Calculated Linear Waypoints." << std::endl;
 
     return waypoints;
 }
