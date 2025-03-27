@@ -24,14 +24,17 @@ class SplineFollower : public rclcpp::Node {
 public:
     SplineFollower();
 
+    // Declare public member functions for use in the main
     void setSafeStartPose();
+    void addGroundPlane();
+    bool loadSplines();
+    double calculateAverageCanvasHeight();
     const std::vector<geometry_msgs::msg::Pose> computeLinearInterpolationPath(
             const geometry_msgs::msg::Pose& start_pose, 
             const geometry_msgs::msg::Pose& end_pose, 
             int num_waypoints);
 
-    geometry_msgs::msg::Pose safe_start_pose_;
-
+    // Declare and define state enum for state machine
     enum class State {
         INIT,
         MOVE_TO_INTERMEDIATE_POS,
@@ -41,26 +44,17 @@ public:
         STOP
     };
 
+    // Declare public member variables for use in main
+    geometry_msgs::msg::Pose safe_start_pose_;
     State state_;
-
     nlohmann::json spline_data_;
-    geometry_msgs::msg::Pose safe_end_pose_;
-    std::vector<geometry_msgs::msg::Pose> current_trajectory_;
-    const double LIFT_HEIGHT = 0.05;  // 50mm lift height
+    // geometry_msgs::msg::Pose safe_end_pose_;
+    // std::vector<geometry_msgs::msg::Pose> current_trajectory_;
+    // const double LIFT_HEIGHT = 0.05;  // 50mm lift height
     size_t current_spline_index_;
-
-    void addGroundPlane();
-    bool loadSplines();
-    std::vector<json> remaining_splines_;
-
-    double calculateAverageCanvasHeight();
-
+    // std::vector<json> remaining_splines_;
     geometry_msgs::msg::Pose intermediate_pose_;
-
     geometry_msgs::msg::Pose canvas_pose_;
-
-private:
-    
 
 };
 

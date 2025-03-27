@@ -1,6 +1,5 @@
 #include <memory>
 #include <thread>
-
 #include "spline_follower.hpp"
 #include <rclcpp/rclcpp.hpp>
 #include <moveit_msgs/msg/joint_constraint.hpp>
@@ -28,173 +27,63 @@ int main(int argc, char * argv[])
     using moveit::planning_interface::MoveGroupInterface;
     auto move_group_interface = MoveGroupInterface(node, "ur_manipulator");
 
+    // Set the Max Velocity and Acceleration Factors
     move_group_interface.setMaxVelocityScalingFactor(0.1);  // 1.0 = 100% of max velocity
     move_group_interface.setMaxAccelerationScalingFactor(1.0); // 1.0 = 100% of max acceleration
-    // move_group_interface.setPlannerId("PTP");
-    // move_group_interface.startStateMonitor(1.0);
 
+    // Create shared pointer to Spline Follower Class
     auto control = std::make_shared<SplineFollower>();
 
+    // Load up the splines for drawing
     control->loadSplines();
 
+    // Add in a ground plane at z = 0 to ensure the robot does not move through its base during intermediate movements
     control->addGroundPlane();
 
+    // Enter state machine for drawing lifecylce
     while (rclcpp::ok()) {
         switch (control->state_) {
+            // State init: Moves to a safe start pose using the path planner.
             case SplineFollower::State::INIT:
             {
                 RCLCPP_INFO(logger, "State: Init");
 
+                // Set the safe start pose: saved to control->safe_start_pose_
                 control->setSafeStartPose();
 
-                // geometry_msgs::msg::Pose current_pose = move_group_interface.getCurrentPose().pose;
-
-                // std::cout << "Current Pose is x = " << current_pose.position.x << " y = " 
-                // << current_pose.position.y << " z = " << current_pose.position.z << std::endl;
-
-                // geometry_msgs::msg::Pose goal_pose = control->safe_start_pose_;
-
-                // std::vector<geometry_msgs::msg::Pose> waypoints = 
-                // control->computeLinearInterpolationPath(current_pose, goal_pose, 10);
-
-                // std::vector<geometry_msgs::msg::Pose> reachable_waypoints;
-
-                // for (auto& waypoint : waypoints) {
-                //     std::vector<geometry_msgs::msg::Pose> segment;
-                //     segment.push_back(waypoint);
-
-                //     moveit_msgs::msg::RobotTrajectory trajectory;
-                //     const double eef_step = 0.01;  // e.g., 1 cm resolution
-                //     const double jump_threshold = 0.0;  // disable jump threshold
-                //     double fraction = move_group_interface.computeCartesianPath(segment, eef_step, jump_threshold, trajectory);
-
-                //     if (fraction == 1.0) {
-                //         std::cout << "Waypoint is reachable via straight-line Cartesian path" << std::endl;
-
-                //         // Optionally execute
-                //         moveit::planning_interface::MoveGroupInterface::Plan plan;
-                //         plan.trajectory_ = trajectory;
-                //         move_group_interface.execute(plan);
-
-                //         reachable_waypoints.push_back(waypoint);
-                //     } else {
-                //         std::cout << "Waypoint is NOT reachable via straight-line Cartesian path" << std::endl;
-                //     }
-                // }
-
-                // std::cout << "Waypoints in total = " << waypoints.size() << std::endl;
-
-                // geometry_msgs::msg::Pose waypoint;
-                // waypoint = control->safe_start_pose_;
-
-                // std::vector<geometry_msgs::msg::Pose> waypoints;
-                // waypoints.push_back(safe_start_);
-
-                // const double jump_threshold = 0.0;
-                // const double eef_step = 0.01;
-
-                // for(auto waypoint : waypoints){
-                //     move_group_interface.setPoseTarget(waypoint);
-                //     move_group_interface.move();
-                // }
-
-                // for(auto waypoint : waypoints){
-                //     std::cout << "Waypoint: x = " << waypoint.position.x << " y = " << waypoint.position.y << " z = " 
-                //     << waypoint.position.z << "." << std::endl;
-                // }
-
-                // int count = 0;
-
-                // for (auto waypoint : waypoints) {
-                //     move_group_interface.setPoseTarget(waypoint);
-
-                //     moveit::planning_interface::MoveGroupInterface::Plan plan;
-                //     auto result = move_group_interface.plan(plan);
-                //     move_group_interface.execute(plan);
-
-                //     if (result == moveit::core::MoveItErrorCode::SUCCESS) {
-                //         std::cout << "Waypoint " << count << " is reachable" << std::endl;
-                //     } else {
-                //         std::cout << "Waypoint " << count << " is unreachable" << std::endl;
-                //         std::cout << "Erasing waypoint " << count << std::endl;
-                //         waypoints.erase(waypoints.begin()+count);  // Remove unreachable waypoint
-                //         count--;
-                //     }
-                //     count++;
-                // }
-
-                // std::cout << "Waypoints remaining = " << waypoints.size() << std::endl;
-
-                // moveit_msgs::msg::RobotTrajectory trajectory;
-
-                // double fraction = 0.0;
-                // double eef_step = 0.01;
-                // double jump_threshold = 0.0;
-                // unsigned int it = 0;
-                // int steps = 1;
-                
-                // while (fraction < 0.95 && it < 100) {
-                //     fraction = move_group_interface.computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory);
-                //     std::cout << "Iteration: " << it << ", fraction: " << fraction 
-                //               << ", eef_step: " << eef_step 
-                //               << ", jump_threshold: " << jump_threshold << std::endl;
-                    
-                //     // eef_step += 0.005;  // Small increments are usually better
-                //     // jump_threshold += 0.01;
-                //     // it++;
-                //     waypoints = control->computeLinearInterpolationPath(current_pose, goal_pose, steps);
-                //     steps++;
-                //     it--;
-                
-                //     rclcpp::sleep_for(std::chrono::milliseconds(50));  // Small pause
-                // }
-
-                // double fraction = move_group_interface.computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory);
-
-                // std::cout << "Fraction of path computed = " << fraction*100 << " percent." << std::endl;
-                
-                
-                // move_group_interface.move();
-                
-
-                double joint_target = -M_PI/4.0;
-                moveit_msgs::msg::Constraints constraint;
-                std::vector<moveit_msgs::msg::JointConstraint> joint_constraints;
-                moveit_msgs::msg::JointConstraint shoulder_lift_joint_constraint;
-                shoulder_lift_joint_constraint.set__joint_name("shoulder_lift_joint");
-                shoulder_lift_joint_constraint.set__position(joint_target);
-
-                shoulder_lift_joint_constraint.set__tolerance_above(M_PI/4.0);
-                shoulder_lift_joint_constraint.set__tolerance_below(M_PI/4.0);
-                shoulder_lift_joint_constraint.set__weight(1.0);
-
+                // Create a path constraint and apply a joint constraint to it for the 'shoulder_lift_joint'
+                double joint_target = -M_PI/4.0; // Set to -45 deg
+                moveit_msgs::msg::Constraints constraint; // Create path constraint msg
+                std::vector<moveit_msgs::msg::JointConstraint> joint_constraints; // Create joint constraint vector
+                moveit_msgs::msg::JointConstraint shoulder_lift_joint_constraint;  // Create specific joint constraint
+                shoulder_lift_joint_constraint.set__joint_name("shoulder_lift_joint"); // Set to shoulder_lift_joint
+                shoulder_lift_joint_constraint.set__position(joint_target); // Set the joint target value
+                shoulder_lift_joint_constraint.set__tolerance_above(M_PI/4.0); // Set a reasonable tolerance above
+                shoulder_lift_joint_constraint.set__tolerance_below(M_PI/4.0); // Set a reasonable tolerance above
+                shoulder_lift_joint_constraint.set__weight(1.0); // Set the weight
                 joint_constraints.push_back(shoulder_lift_joint_constraint);
-                constraint.set__joint_constraints(joint_constraints);
+                constraint.set__joint_constraints(joint_constraints); // Apply the joint constraint to the path constraint
 
+                // Generate a movement plan to the safe start pose
                 moveit::planning_interface::MoveGroupInterface::Plan plan;
-                move_group_interface.setPathConstraints(constraint);
-                move_group_interface.setPoseTarget(control->safe_start_pose_);
-                move_group_interface.setPlanningTime(10.0);
-                move_group_interface.setPlannerId("PTP");
-                
-                move_group_interface.plan(plan);
-                move_group_interface.execute(plan);
+                move_group_interface.setPathConstraints(constraint); // Set the path constraint
+                move_group_interface.setPoseTarget(control->safe_start_pose_); // Set the pose target to the safe start pose
+                move_group_interface.setPlanningTime(10.0); // Set the planning time (generous for constrained path)
+                move_group_interface.setPlannerId("PTP"); // Set the planner id to point-to-point
+                move_group_interface.plan(plan); // Generate the plan
+                move_group_interface.execute(plan); // Execute the plan
+                move_group_interface.clearPathConstraints(); // Clear all constraints
 
-                move_group_interface.clearPathConstraints();
-                
                 RCLCPP_INFO(logger, "Moved to safe start pose");
 
+                // Move to next state
                 control->state_ = SplineFollower::State::MOVE_TO_INTERMEDIATE_POS;
-                // control->state_ = SplineFollower::State::STOP;
                 break;
-
             }
-
+            // State move to intermediate pos: moves to an intermediate position directly above the next spline
             case SplineFollower::State::MOVE_TO_INTERMEDIATE_POS:
             {
-
                 RCLCPP_INFO(logger, "State: Move to intermediate pos.");
-
                 // Ensure we have a next spline to move to
                 if (control->current_spline_index_ < control->spline_data_["splines"].size()) {
                     
@@ -213,28 +102,25 @@ int main(int argc, char * argv[])
                     control->intermediate_pose_.orientation.z = 0.0;
                     control->intermediate_pose_.orientation.w = 0.0;
 
-                    geometry_msgs::msg::Pose current_pose = move_group_interface.getCurrentPose().pose;
-                    std::vector<geometry_msgs::msg::Pose> waypoints = 
-                    control->computeLinearInterpolationPath(current_pose, control->intermediate_pose_, 10);
-                    double jump_threshold = 0.0;
-                    double eef_step = 0.01;
+                    // Generate a straight line trajectory between the current pose and intermediate pose
+                    geometry_msgs::msg::Pose current_pose = move_group_interface.getCurrentPose().pose; // Fetch current pose
+                    std::vector<geometry_msgs::msg::Pose> waypoints = // Compute a linear vector of waypoints between current and intermediate pose
+                    control->computeLinearInterpolationPath(current_pose, control->intermediate_pose_, 10); 
+                    double jump_threshold = 0.0; // Set jump threshold
+                    double eef_step = 0.01; // Set eef step
                     moveit_msgs::msg::RobotTrajectory trajectory;
-                    double fraction = move_group_interface.computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory);
-
-                    if (fraction < 0.95) {
-                        RCLCPP_ERROR(logger, "Failed to compute drawing trajectory (%.2f%%).", fraction * 100);
+                    double fraction = move_group_interface.computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory); // Calculate trajectory - fration = total fraction of path calculated
+                    if (fraction < 0.95) { // Check if we achieved at least 95% of the path
+                        RCLCPP_ERROR(logger, "Failed to compute drawing trajectory (%.2f%%).", fraction * 100); // Report failed trajectory plan
                     }
-
-                    // move_group_interface.setPoseTarget(control->intermediate_pose_);
-                    // move_group_interface.setPlannerId("LIN");
                     moveit::planning_interface::MoveGroupInterface::Plan plan;
-                    plan.trajectory_ = trajectory;
-                    // move_group_interface.plan(plan);
-                    move_group_interface.execute(plan);
-                    // move_group_interface.move();
-                    control->state_ = SplineFollower::State::MOVE_TO_CANVAS;
-                    // control->state_ = SplineFollower::State::STOP;
+                    plan.trajectory_ = trajectory; // Set the calculated trajectory into our plan
+                    move_group_interface.execute(plan); // Execute the plan and move to intermediate pose
+
                     RCLCPP_INFO(logger, "Moved to intermediate pose.");
+
+                    // Move to the next state
+                    control->state_ = SplineFollower::State::MOVE_TO_CANVAS;
                 } 
                 else {
                     // If no more splines left, go to STOP state
@@ -242,100 +128,109 @@ int main(int argc, char * argv[])
                 }
                 break;
             }
-
+            // State move to canvas: move dirctly downward to touch the pen to the canvas at the first waypoint of the next spline
             case SplineFollower::State::MOVE_TO_CANVAS:
             {
                 RCLCPP_INFO(logger, "State: Move to canvas.");
+
                 // Calculate the average Z position of the canvas
                 double canvas_z = control->calculateAverageCanvasHeight();
 
-                control->canvas_pose_ = control->intermediate_pose_;
+                // Set the target canvas pose
+                control->canvas_pose_ = control->intermediate_pose_; // Set to intermediate pose directly above the first waypoint of next spline
                 control->canvas_pose_.position.z = canvas_z;  // Move to the canvas surface
 
-                geometry_msgs::msg::Pose current_pose = move_group_interface.getCurrentPose().pose;
-                std::vector<geometry_msgs::msg::Pose> waypoints = 
+                // Generate the straight line trajectory to the canvas
+                geometry_msgs::msg::Pose current_pose = move_group_interface.getCurrentPose().pose; // Fetch the current pose
+                std::vector<geometry_msgs::msg::Pose> waypoints = // Compute a vector of waypoints in a straght line between the current pose and canvas pose
                 control->computeLinearInterpolationPath(current_pose, control->canvas_pose_, 10);
-                double jump_threshold = 0.0;
-                double eef_step = 0.01;
+                double jump_threshold = 0.0; // Set jump threshold to zero
+                double eef_step = 0.01; // Set the eef step to a low value
                 moveit_msgs::msg::RobotTrajectory trajectory;
-                double fraction = move_group_interface.computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory);
-
-                if (fraction < 0.95) {
+                double fraction = move_group_interface.computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory); // Compute cartesian trajectory
+                if (fraction < 0.95) { // Handle incomplete trajectory
                     RCLCPP_ERROR(logger, "Failed to compute drawing trajectory (%.2f%%).", fraction * 100);
                 }
 
+                // Execute trajectory
                 moveit::planning_interface::MoveGroupInterface::Plan plan;
-                plan.trajectory_ = trajectory;
-                move_group_interface.execute(plan);
-
-                // move_group_interface.setPoseTarget(control->canvas_pose_);
-                // move_group_interface.move();
+                plan.trajectory_ = trajectory; // Set the trajectory to our path plan
+                move_group_interface.execute(plan); // Execute plan and move to canvas
 
                 RCLCPP_INFO(logger, "Moved to canvas.");
 
+                // Move to the next state: Move through drawing trajectory
                 control->state_ = SplineFollower::State::MOVE_THROUGH_DRAWING_TRAJECTORY;
-                // control->state_ = SplineFollower::State::STOP;
                 break;
             }
-
+            // State move through drawing trajectory: move through the next spline with pen to canvas (drawing state)
             case SplineFollower::State::MOVE_THROUGH_DRAWING_TRAJECTORY:
             {
                 RCLCPP_INFO(logger, "State: Move through drawing trajectory.");
+
+                // Fetch the way points from our spline data memeber
                 std::vector<geometry_msgs::msg::Pose> waypoints;
                 for (const auto& waypoint : control->spline_data_["splines"].at(control->current_spline_index_)["waypoints"]) {
                     geometry_msgs::msg::Pose pose;
                     pose.position.x = waypoint[0].get<double>();
                     pose.position.y = waypoint[1].get<double>();
                     pose.position.z = waypoint[2].get<double>();  // you can add lift here if needed
-            
                     pose.orientation.x = 0.0;
                     pose.orientation.y = 1.0;
                     pose.orientation.z = 0.0;
                     pose.orientation.w = 0.0;
-            
                     waypoints.push_back(pose);
                 }
             
-                double jump_threshold = 0.0;
-                double eef_step = 0.01;
+                // Generate the trajectory through the waypoints
+                double jump_threshold = 0.0; // Set jump threshold to zero
+                double eef_step = 0.01; // Set low eef step
                 moveit_msgs::msg::RobotTrajectory trajectory;
-                double fraction = move_group_interface.computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory);
-            
-                // std::cout << "Acheieved " << fraction << " of the path " << std::endl;
-
-                // RCLCPP_INFO(logger, "Achieved: %ld", control->current_spline_index_*100, " percent of the path.");
-            
-                if (fraction < 0.95) {
+                double fraction = move_group_interface.computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory); // Compute cartesian path through waypoints
+                if (fraction < 0.95) { // Handle incomplete path
                     RCLCPP_ERROR(logger, "Failed to compute drawing trajectory (%.2f%%).", fraction * 100);
                 }
 
-
+                // Execute trajectory
                 moveit::planning_interface::MoveGroupInterface::Plan plan;
-                plan.trajectory_ = trajectory;
-                move_group_interface.execute(plan);
+                plan.trajectory_ = trajectory; // Assign trajectory to our plan
+                move_group_interface.execute(plan); // Execute the plan
 
                 RCLCPP_INFO(logger, "Completed spline: %ld", control->current_spline_index_);
 
-                // control->state_ = SplineFollower::State::MOVE_OFF_CANVAS;
-                control->state_ = SplineFollower::State::STOP;
-
+                // Move to next state: move off canvas
+                control->state_ = SplineFollower::State::MOVE_OFF_CANVAS;
                 break;
             }
-
+            // State move off canvas: move in a straight line directly upwards off the canvas
             case SplineFollower::State::MOVE_OFF_CANVAS:
             {
                 RCLCPP_INFO(logger, "State: Move off canvas.");
+
                 // Get the canvas height
                 double canvas_z = control->calculateAverageCanvasHeight();
-            
+
                 // Compute the safe lifted pose (100mm above the canvas)
-                geometry_msgs::msg::Pose lifted_pose = control->canvas_pose_;
+                geometry_msgs::msg::Pose lifted_pose = move_group_interface.getCurrentPose().pose;
                 lifted_pose.position.z = canvas_z + 0.1;  // Move 100mm up
 
-                move_group_interface.setPoseTarget(lifted_pose);
-                move_group_interface.move();
+                // Generate straight line trajectory directly upwards
+                geometry_msgs::msg::Pose current_pose = move_group_interface.getCurrentPose().pose; // Fetch the current pose
+                std::vector<geometry_msgs::msg::Pose> waypoints = // Compute waypoints of the straight line path between current pose and lifted pose
+                control->computeLinearInterpolationPath(current_pose, lifted_pose, 10);
+                double jump_threshold = 0.0; // Set the jump threshold to a zero
+                double eef_step = 0.01; // Set the eef step to a low value
+                moveit_msgs::msg::RobotTrajectory trajectory;
+                double fraction = move_group_interface.computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory); // Compute the trajectory
+                if (fraction < 0.95) { // Handle incomplete trajectory
+                    RCLCPP_ERROR(logger, "Failed to compute drawing trajectory (%.2f%%).", fraction * 100);
+                }
 
-            
+                // Execute trajectory
+                moveit::planning_interface::MoveGroupInterface::Plan plan;
+                plan.trajectory_ = trajectory; // Assign the trajectory to our plan
+                move_group_interface.execute(plan); // Execute the plan
+
                 // Move to the next state (going to the next spline or stopping)
                 control->current_spline_index_++;
                 if (control->current_spline_index_ < control->spline_data_["splines"].size()) {
@@ -344,20 +239,48 @@ int main(int argc, char * argv[])
                 } else {
                     control->state_ = SplineFollower::State::STOP;
                 }
-            
                 break;
             }                
-
+            // State stop: return home and close the program
             case SplineFollower::State::STOP:
+
                 RCLCPP_INFO(logger, "State: Stop.");
+                RCLCPP_INFO(logger, "Returning home.");
+
+                // Set home joint values to upright position
+                sensor_msgs::msg::JointState home_state;
+                home_state.name = { // Organise joint names in order
+                    "shoulder_pan_joint",
+                    "shoulder_lift_joint",
+                    "elbow_joint",
+                    "wrist_1_joint",
+                    "wrist_2_joint",
+                    "wrist_3_joint"
+                };
+                home_state.position = { // Set the joint values
+                    0.0, -M_PI/2.0, 0.0, -M_PI/2.0, 0.0, 0.0
+                };
+
+                // Generate the plan to home position
+                moveit::planning_interface::MoveGroupInterface::Plan plan;
+                move_group_interface.setJointValueTarget(home_state); // Set the target joint values
+                move_group_interface.setPlanningTime(10.0); // Apply generous planning time to reduce possibility of error
+                move_group_interface.setPlannerId("PTP"); // Set the planner id to point-to-point
+                move_group_interface.plan(plan); // Generate the plan
+
+                // Execute the plan
+                move_group_interface.execute(plan);
+
+                RCLCPP_INFO(logger, "Moved home.");
                 RCLCPP_INFO(logger, "All splines completed.");
+
+                // Shutdown ros and join threads
                 rclcpp::shutdown();
                 spinner.join();
                 return 0;
         }
     }
-
-    // Shutdown ROS
+    // Shutdown ROS and join threads (in case state machine while loop is broken)
     rclcpp::shutdown();
     spinner.join();
     return 0;
