@@ -11,12 +11,12 @@ int main(int argc, char * argv[])
     // Initialize ROS and create the Node
     rclcpp::init(argc, argv);
     auto const node = std::make_shared<rclcpp::Node>(
-        "moveit",
+        "selfiebot_control",
         rclcpp::NodeOptions().automatically_declare_parameters_from_overrides(true)
     );
 
     // Create a ROS logger
-    auto const logger = rclcpp::get_logger("moveit");
+    auto const logger = rclcpp::get_logger("selfiebot_control");
 
     // Spin up a SingleThreadedExecutor for the current state monitor
     rclcpp::executors::SingleThreadedExecutor executor;
@@ -40,8 +40,21 @@ int main(int argc, char * argv[])
     // Add in a ground plane at z = 0 to ensure the robot does not move through its base during intermediate movements
     control->addGroundPlane();
 
+    // Set the maximum amount of retries for a state to attempt its objective
+    unsigned int MAX_RETRIES = 3;
+    unsigned int RETRIES = 0;
+
     // Enter state machine for drawing lifecylce
     while (rclcpp::ok()) {
+        // Check retries and shutdown if max retries has been reached
+        if(RETRIES > MAX_RETRIES){ // If the max retries has been reached report and shutdown the system
+            RCLCPP_ERROR(logger, "The maximum amount of retries has been reached. Please take a new selfie.");
+            RCLCPP_INFO(logger, "Shutting down system.");
+            // Shutdown ros and join threads
+            rclcpp::shutdown();
+            spinner.join();
+            return 0;
+        }
         switch (control->state_) {
             // State init: Moves to a safe start pose using the path planner.
             case SplineFollower::State::INIT:
@@ -70,14 +83,25 @@ int main(int argc, char * argv[])
                 move_group_interface.setPoseTarget(control->safe_start_pose_); // Set the pose target to the safe start pose
                 move_group_interface.setPlanningTime(10.0); // Set the planning time (generous for constrained path)
                 move_group_interface.setPlannerId("PTP"); // Set the planner id to point-to-point
-                move_group_interface.plan(plan); // Generate the plan
-                move_group_interface.execute(plan); // Execute the plan
+                moveit::core::MoveItErrorCode response;
+                response = move_group_interface.plan(plan); // Generate the plan - save the response 
+
+                // Check repose and execute plan if safe
+                if(response == moveit::core::MoveItErrorCode::SUCCESS){ // If the plan has succeded execute and move to next state
+                    move_group_interface.execute(plan); // Execute the plan
+                    RCLCPP_INFO(logger, "Moved to safe start pose");
+                    RETRIES = 0; // Ensure retries is reset to 0
+                    // Move to next state
+                    control->state_ = SplineFollower::State::MOVE_TO_INTERMEDIATE_POS;
+                }
+                else{ // If the plan has failed remain in this state and retry
+                    RCLCPP_ERROR(logger, "The planner has failed, attempting to plan again.");
+                    // RCLCPP_INFO(logger, "Current retries is %d", RETRIES, " out of %d", MAX_RETRIES, " available.");
+                    RETRIES++; // Increment retries up
+                }
+
                 move_group_interface.clearPathConstraints(); // Clear all constraints
 
-                RCLCPP_INFO(logger, "Moved to safe start pose");
-
-                // Move to next state
-                control->state_ = SplineFollower::State::MOVE_TO_INTERMEDIATE_POS;
                 break;
             }
             // State move to intermediate pos: moves to an intermediate position directly above the next spline
@@ -112,15 +136,20 @@ int main(int argc, char * argv[])
                     double fraction = move_group_interface.computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory); // Calculate trajectory - fration = total fraction of path calculated
                     if (fraction < 0.95) { // Check if we achieved at least 95% of the path
                         RCLCPP_ERROR(logger, "Failed to compute drawing trajectory (%.2f%%).", fraction * 100); // Report failed trajectory plan
+                        RETRIES++; // Increment retries up
                     }
-                    moveit::planning_interface::MoveGroupInterface::Plan plan;
-                    plan.trajectory_ = trajectory; // Set the calculated trajectory into our plan
-                    move_group_interface.execute(plan); // Execute the plan and move to intermediate pose
+                    else{ // If path is computed above 95% execute the path
+                        moveit::planning_interface::MoveGroupInterface::Plan plan;
+                        plan.trajectory_ = trajectory; // Set the calculated trajectory into our plan
+                        move_group_interface.execute(plan); // Execute the plan and move to intermediate pose
 
-                    RCLCPP_INFO(logger, "Moved to intermediate pose.");
+                        RCLCPP_INFO(logger, "Moved to intermediate pose.");
 
-                    // Move to the next state
-                    control->state_ = SplineFollower::State::MOVE_TO_CANVAS;
+                        // Move to the next state
+                        control->state_ = SplineFollower::State::MOVE_TO_CANVAS;
+
+                        RETRIES = 0; // Ensure retries resets to zero
+                    }
                 } 
                 else {
                     // If no more splines left, go to STOP state
@@ -150,17 +179,22 @@ int main(int argc, char * argv[])
                 double fraction = move_group_interface.computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory); // Compute cartesian trajectory
                 if (fraction < 0.95) { // Handle incomplete trajectory
                     RCLCPP_ERROR(logger, "Failed to compute drawing trajectory (%.2f%%).", fraction * 100);
+                    RETRIES++; // Increment retries up
                 }
+                else{ // If trajectory is complete execute
+                    // Execute trajectory
+                    moveit::planning_interface::MoveGroupInterface::Plan plan;
+                    plan.trajectory_ = trajectory; // Set the trajectory to our path plan
+                    move_group_interface.execute(plan); // Execute plan and move to canvas
 
-                // Execute trajectory
-                moveit::planning_interface::MoveGroupInterface::Plan plan;
-                plan.trajectory_ = trajectory; // Set the trajectory to our path plan
-                move_group_interface.execute(plan); // Execute plan and move to canvas
+                    RCLCPP_INFO(logger, "Moved to canvas.");
 
-                RCLCPP_INFO(logger, "Moved to canvas.");
+                    // Move to the next state: Move through drawing trajectory
+                    control->state_ = SplineFollower::State::MOVE_THROUGH_DRAWING_TRAJECTORY;
 
-                // Move to the next state: Move through drawing trajectory
-                control->state_ = SplineFollower::State::MOVE_THROUGH_DRAWING_TRAJECTORY;
+                    RETRIES = 0; // Ensure retries resets to zero
+                }
+                
                 break;
             }
             // State move through drawing trajectory: move through the next spline with pen to canvas (drawing state)
@@ -189,17 +223,22 @@ int main(int argc, char * argv[])
                 double fraction = move_group_interface.computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory); // Compute cartesian path through waypoints
                 if (fraction < 0.95) { // Handle incomplete path
                     RCLCPP_ERROR(logger, "Failed to compute drawing trajectory (%.2f%%).", fraction * 100);
+                    RETRIES++; // Increment retries up
+                }
+                else{ // If trajectory is complete execute
+                    // Execute trajectory
+                    moveit::planning_interface::MoveGroupInterface::Plan plan;
+                    plan.trajectory_ = trajectory; // Assign trajectory to our plan
+                    move_group_interface.execute(plan); // Execute the plan
+
+                    RCLCPP_INFO(logger, "Completed spline: %ld", control->current_spline_index_+1);
+
+                    // Move to next state: move off canvas
+                    control->state_ = SplineFollower::State::MOVE_OFF_CANVAS;
+
+                    RETRIES = 0; // Ensure retries resets to zero
                 }
 
-                // Execute trajectory
-                moveit::planning_interface::MoveGroupInterface::Plan plan;
-                plan.trajectory_ = trajectory; // Assign trajectory to our plan
-                move_group_interface.execute(plan); // Execute the plan
-
-                RCLCPP_INFO(logger, "Completed spline: %ld", control->current_spline_index_);
-
-                // Move to next state: move off canvas
-                control->state_ = SplineFollower::State::MOVE_OFF_CANVAS;
                 break;
             }
             // State move off canvas: move in a straight line directly upwards off the canvas
@@ -224,21 +263,27 @@ int main(int argc, char * argv[])
                 double fraction = move_group_interface.computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory); // Compute the trajectory
                 if (fraction < 0.95) { // Handle incomplete trajectory
                     RCLCPP_ERROR(logger, "Failed to compute drawing trajectory (%.2f%%).", fraction * 100);
+                    RETRIES++;
+                }
+                else{ // If trajectory is complete execute
+                    // Execute trajectory
+                    moveit::planning_interface::MoveGroupInterface::Plan plan;
+                    plan.trajectory_ = trajectory; // Assign the trajectory to our plan
+                    move_group_interface.execute(plan); // Execute the plan
+
+                    // Move to the next state (going to the next spline or stopping)
+                    control->current_spline_index_++;
+                    if (control->current_spline_index_ < control->spline_data_["splines"].size()) {
+                        RCLCPP_INFO(logger, "Moved off canvas.");
+                        control->state_ = SplineFollower::State::MOVE_TO_INTERMEDIATE_POS;
+                        RETRIES = 0; // Ensure retries is reset to 0
+                    } else { // If all splines are completed move to stop state
+                        RCLCPP_INFO(logger, "All splines completed.");
+                        control->state_ = SplineFollower::State::STOP;
+                        RETRIES = 0; // Ensure retries is reset to 0
+                    }
                 }
 
-                // Execute trajectory
-                moveit::planning_interface::MoveGroupInterface::Plan plan;
-                plan.trajectory_ = trajectory; // Assign the trajectory to our plan
-                move_group_interface.execute(plan); // Execute the plan
-
-                // Move to the next state (going to the next spline or stopping)
-                control->current_spline_index_++;
-                if (control->current_spline_index_ < control->spline_data_["splines"].size()) {
-                    RCLCPP_INFO(logger, "Moved off canvas.");
-                    control->state_ = SplineFollower::State::MOVE_TO_INTERMEDIATE_POS;
-                } else {
-                    control->state_ = SplineFollower::State::STOP;
-                }
                 break;
             }                
             // State stop: return home and close the program
@@ -266,18 +311,37 @@ int main(int argc, char * argv[])
                 move_group_interface.setJointValueTarget(home_state); // Set the target joint values
                 move_group_interface.setPlanningTime(10.0); // Apply generous planning time to reduce possibility of error
                 move_group_interface.setPlannerId("PTP"); // Set the planner id to point-to-point
-                move_group_interface.plan(plan); // Generate the plan
+                moveit::core::MoveItErrorCode response; // Create a response message
+                response = move_group_interface.plan(plan); // Generate the plan - save the response 
 
-                // Execute the plan
-                move_group_interface.execute(plan);
+                // Check the respose
+                if(response == moveit::core::MoveItErrorCode::SUCCESS){ // If successful execute the path
+                    // Execute the plan
+                    move_group_interface.execute(plan);
 
-                RCLCPP_INFO(logger, "Moved home.");
-                RCLCPP_INFO(logger, "All splines completed.");
+                    RCLCPP_INFO(logger, "Moved home.");
+                    RCLCPP_INFO(logger, "Shutting down system.");
 
-                // Shutdown ros and join threads
-                rclcpp::shutdown();
-                spinner.join();
-                return 0;
+                    // Shutdown ros and join threads
+                    rclcpp::shutdown();
+                    spinner.join();
+                    return 0;
+                }
+                else{ // If the planner has failed try again
+                    RCLCPP_ERROR(logger, "The planner has failed, attempting to plan again.");
+                    RETRIES++; // Increment the retries up
+                }
+                // Check retries and shutdown if max retries has been reached immediately and report special error message
+                if(RETRIES > MAX_RETRIES){ // If the max retries has been reached report and shutdown the system
+                    RCLCPP_ERROR(logger, "Drawing is complete but the robot has failed to return home. Please return the robot home manually.");
+                    RCLCPP_INFO(logger, "Shutting down system.");
+                    // Shutdown ros and join threads
+                    rclcpp::shutdown();
+                    spinner.join();
+                    return 0;
+                }
+
+                break;
         }
     }
     // Shutdown ROS and join threads (in case state machine while loop is broken)
