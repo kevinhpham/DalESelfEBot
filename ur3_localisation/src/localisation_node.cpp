@@ -13,32 +13,34 @@
 
 class UR3Localisation : public rclcpp::Node {
 public:
-    UR3Localisation() : Node("ur3_localisation"), tf_buffer_(this->get_clock()), tf_listener_(tf_buffer_) {
-        freedrive_client_ = this->create_client<std_srvs::srv::Trigger>("/io_and_status_controller/set_freedrive");
-        save_subscriber_ = this->create_subscription<std_msgs::msg::Empty>(
+    UR3Localisation() : Node("ur3_localisation"), tf_buffer_(this->get_clock()), tf_listener_(tf_buffer_) { // Initialise memeber variables
+        freedrive_client_ = this->create_client<std_srvs::srv::Trigger>("/io_and_status_controller/set_freedrive"); // Create client to set robot into freedrive mode
+        save_subscriber_ = this->create_subscription<std_msgs::msg::Empty>( // Create subscriber for saving each position
             "/save_position", 10, std::bind(&UR3Localisation::save_position_callback, this, std::placeholders::_1));
-        marker_publisher_ = this->create_publisher<visualization_msgs::msg::Marker>("/visualization_marker", 10);
+        marker_publisher_ = this->create_publisher<visualization_msgs::msg::Marker>("/visualization_marker", 10); // Create marker publisher
 
         struct passwd *pw = getpwuid(getuid());
         std::string home_path = pw->pw_dir;
-        save_path_ = home_path + "/ros2_ws/src/ur3_localisation/config/params.yaml";
+        save_path_ = home_path + "/ros2_ws/src/ur3_localisation/config/params.yaml"; // Save Yaml path for storing locations
 
         RCLCPP_INFO(this->get_logger(), "UR3 Localisation Node Ready.");
         RCLCPP_INFO(this->get_logger(), "Saving positions to: %s", save_path_.c_str());
     }
 
 private:
-    rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr freedrive_client_;
-    rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr save_subscriber_;
-    rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_publisher_;
-    std::vector<Eigen::Vector3d> positions_;
-    std::vector<Eigen::Quaterniond> orientations_;
-    std::string save_path_;
-    tf2_ros::Buffer tf_buffer_;
-    tf2_ros::TransformListener tf_listener_;
+    rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr freedrive_client_; // Client for setting robot into freedrive mode
+    rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr save_subscriber_; // Subscriber for saving locations
+    rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_publisher_; // Publisher for markers 
+    std::vector<Eigen::Vector3d> positions_; // Vector for storing each position
+    std::vector<Eigen::Quaterniond> orientations_; // Vector for storing each orientation
+    std::string save_path_; // String to save yaml path
+    tf2_ros::Buffer tf_buffer_; // Buffer for the tf listener
+    tf2_ros::TransformListener tf_listener_; // Transform listener to fetch the pose
 
+    // Callback function to save each position as we perform localisation
     void save_position_callback(const std_msgs::msg::Empty::SharedPtr /*msg*/) {
         try {
+            // Save the current position and orientation
             geometry_msgs::msg::TransformStamped transform_stamped;
             transform_stamped = tf_buffer_.lookupTransform("base_link", "tool0", tf2::TimePointZero);
             
@@ -49,7 +51,7 @@ private:
                                            transform_stamped.transform.rotation.x,
                                            transform_stamped.transform.rotation.y,
                                            transform_stamped.transform.rotation.z);
-
+            // As we save each position report and publish a visualisation
             if (positions_.size() < 4) {
                 positions_.push_back(position);
                 orientations_.push_back(orientation);
@@ -57,7 +59,7 @@ private:
 
                 RCLCPP_INFO(this->get_logger(), "Position %ld saved: x=%.3f, y=%.3f, z=%.3f",
                             positions_.size(), position.x(), position.y(), position.z());
-
+                // Once we have saved 4 poses we save them all to the yaml and report it and publish the plane visualisation
                 if (positions_.size() == 4) {
                     save_positions();
                     publish_plane_marker();
@@ -67,11 +69,12 @@ private:
                 RCLCPP_WARN(this->get_logger(), "All 4 positions have already been saved.");
             }
         }
-        catch (tf2::TransformException &ex) {
+        catch (tf2::TransformException &ex) { // Handle error
             RCLCPP_WARN(this->get_logger(), "Could not transform: %s", ex.what());
         }
     }
 
+    // Publishes a sphere marker at each location to confirm the point is consistent with the end effector position in simulation
     void publish_marker(const Eigen::Vector3d &position, int id, double r, double g, double b, double scale) {
         visualization_msgs::msg::Marker marker;
         marker.header.frame_id = "base_link";
@@ -94,6 +97,7 @@ private:
         marker_publisher_->publish(marker);
     }
 
+    // Publishes a plane visualising the canvas plane
     void publish_plane_marker() {
         visualization_msgs::msg::Marker plane_marker;
         plane_marker.header.frame_id = "base_link";
@@ -117,6 +121,7 @@ private:
         marker_publisher_->publish(plane_marker);
     }
 
+    // Saves all positions to the yaml once localisation is complete
     void save_positions() {
         YAML::Node yaml_data;
         for (size_t i = 0; i < positions_.size(); ++i) {
@@ -134,6 +139,7 @@ private:
         RCLCPP_INFO(this->get_logger(), "Positions saved successfully to %s", save_path_.c_str());
     }
 
+    // Disables the freedrive mode
     void disable_freedrive() {
         auto request = std::make_shared<std_srvs::srv::Trigger::Request>();
         freedrive_client_->async_send_request(request);
@@ -142,9 +148,9 @@ private:
 };
 
 int main(int argc, char** argv) {
-    rclcpp::init(argc, argv);
-    auto node = std::make_shared<UR3Localisation>();
+    rclcpp::init(argc, argv); // Initialise ros
+    auto node = std::make_shared<UR3Localisation>(); // Crete a shared pointer ro UR3Localisation - process continues in callback function
     rclcpp::spin(node);
-    rclcpp::shutdown();
+    rclcpp::shutdown(); // Shutdown when complete 
     return 0;
 }
