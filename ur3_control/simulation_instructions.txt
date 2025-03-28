@@ -21,3 +21,12 @@ ros2 launch ur3_control moveit_stack.launch.py ur_type:=ur3e launch_rviz:=false 
 # Launch Control Node
 
 ros2 run ur3_control spline_follower
+
+# Record a rosbag
+
+ros2 bag record /joint_states -o /home/jarred/git/DalESelfEBot/ur3_control/rosbags/sim_toolpath
+
+
+
+
+

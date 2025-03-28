@@ -4,6 +4,8 @@
 #include <rclcpp/rclcpp.hpp>
 #include <moveit_msgs/msg/joint_constraint.hpp>
 #include <moveit_msgs/msg/constraints.hpp>
+#include <iostream>
+#include <string>
 
 
 int main(int argc, char * argv[])
@@ -61,6 +63,11 @@ int main(int argc, char * argv[])
             {
                 RCLCPP_INFO(logger, "State: Init");
 
+                std::cout << "Press 'q' to continue..." << std::endl;
+                for (std::string line; std::getline(std::cin, line); ) {
+                    if (line == "q") break;
+                }
+
                 // Set the safe start pose: saved to control->safe_start_pose_
                 control->setSafeStartPose();
 
@@ -108,6 +115,12 @@ int main(int argc, char * argv[])
             case SplineFollower::State::MOVE_TO_INTERMEDIATE_POS:
             {
                 RCLCPP_INFO(logger, "State: Move to intermediate pos.");
+
+                std::cout << "Press 'q' to continue..." << std::endl;
+                for (std::string line; std::getline(std::cin, line); ) {
+                    if (line == "q") break;
+                }
+
                 // Ensure we have a next spline to move to
                 if (control->current_spline_index_ < control->spline_data_["splines"].size()) {
                     
@@ -118,7 +131,7 @@ int main(int argc, char * argv[])
                     // Calculate the intermediate pose (100mm above the first waypoint)
                     control->intermediate_pose_.position.x = first_waypoint[0].get<double>();
                     control->intermediate_pose_.position.y = first_waypoint[1].get<double>();
-                    control->intermediate_pose_.position.z = first_waypoint[2].get<double>() + 0.1;  // 100mm above
+                    control->intermediate_pose_.position.z = first_waypoint[2].get<double>() + 0.05;  // 50mm above
                     
                     // Ensure the orientation is pointing straight down
                     control->intermediate_pose_.orientation.x = 0.0;
@@ -162,6 +175,11 @@ int main(int argc, char * argv[])
             {
                 RCLCPP_INFO(logger, "State: Move to canvas.");
 
+                std::cout << "Press 'q' to continue..." << std::endl;
+                for (std::string line; std::getline(std::cin, line); ) {
+                    if (line == "q") break;
+                }
+
                 // Calculate the average Z position of the canvas
                 double canvas_z = control->calculateAverageCanvasHeight();
 
@@ -201,6 +219,11 @@ int main(int argc, char * argv[])
             case SplineFollower::State::MOVE_THROUGH_DRAWING_TRAJECTORY:
             {
                 RCLCPP_INFO(logger, "State: Move through drawing trajectory.");
+
+                std::cout << "Press 'q' to continue..." << std::endl;
+                for (std::string line; std::getline(std::cin, line); ) {
+                    if (line == "q") break;
+                }
 
                 // Fetch the way points from our spline data memeber
                 std::vector<geometry_msgs::msg::Pose> waypoints;
@@ -246,6 +269,11 @@ int main(int argc, char * argv[])
             {
                 RCLCPP_INFO(logger, "State: Move off canvas.");
 
+                std::cout << "Press 'q' to continue..." << std::endl;
+                for (std::string line; std::getline(std::cin, line); ) {
+                    if (line == "q") break;
+                }
+
                 // Get the canvas height
                 double canvas_z = control->calculateAverageCanvasHeight();
 
@@ -290,6 +318,12 @@ int main(int argc, char * argv[])
             case SplineFollower::State::STOP:
 
                 RCLCPP_INFO(logger, "State: Stop.");
+
+                std::cout << "Press 'q' to continue..." << std::endl;
+                for (std::string line; std::getline(std::cin, line); ) {
+                    if (line == "q") break;
+                }
+
                 RCLCPP_INFO(logger, "Returning home.");
 
                 // Set home joint values to upright position
