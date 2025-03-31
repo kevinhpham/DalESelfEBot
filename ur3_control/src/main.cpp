@@ -10,9 +10,9 @@
 
 int main(int argc, char * argv[])
 {
-    // Initialize ROS and create the Node
+    // Initialize ROS and create the MoveIt Connection Node
     rclcpp::init(argc, argv);
-    auto const node = std::make_shared<rclcpp::Node>(
+    auto const moveit = std::make_shared<rclcpp::Node>(
         "selfiebot_control",
         rclcpp::NodeOptions().automatically_declare_parameters_from_overrides(true)
     );
@@ -20,24 +20,43 @@ int main(int argc, char * argv[])
     // Create a ROS logger
     auto const logger = rclcpp::get_logger("selfiebot_control");
 
+    // Create shared pointer to Spline Follower Class
+    auto control = std::make_shared<SplineFollower>();
+
     // Spin up a SingleThreadedExecutor for the current state monitor
     rclcpp::executors::SingleThreadedExecutor executor;
-    executor.add_node(node);
+    executor.add_node(moveit);
+    executor.add_node(control);
     auto spinner = std::thread([&executor]() { executor.spin(); });
 
     // Create the MoveIt MoveGroup Interface
     using moveit::planning_interface::MoveGroupInterface;
-    auto move_group_interface = MoveGroupInterface(node, "ur_manipulator");
+    auto move_group_interface = MoveGroupInterface(moveit, "ur_manipulator");
 
     // Set the Max Velocity and Acceleration Factors
     move_group_interface.setMaxVelocityScalingFactor(0.1);  // 1.0 = 100% of max velocity
     move_group_interface.setMaxAccelerationScalingFactor(1.0); // 1.0 = 100% of max acceleration
 
-    // Create shared pointer to Spline Follower Class
-    auto control = std::make_shared<SplineFollower>();
+    // // Main thread waits for the flag
+    // {
+    //     std::unique_lock<std::mutex> lock(control->mtx_);
+    //     control->cv_.wait(lock, [& control] { return control->flag_received_; });
+    //     std::cout << "Main thread received the signal!" << std::endl;
+    // }
 
     // Load up the splines for drawing
     control->loadSplines();
+
+    // Generate border - Placed at the start of the queue
+    double offset = 0.05; // 5 cm offset
+    if(!control->generateBorderSpline(offset)) RCLCPP_ERROR(logger, "Failed to generate border.");
+
+    // Generate signature - Placed at the end of the queue
+    // if(!control->generateSignageSpline()) RCLCPP_ERROR(logger, "Failed to generate signature");
+
+    std::cout << "There are " << control->spline_data_["splines"].size() << " splines to draw." << std::endl;
+    std::string filename = "/home/jarred/git/DalESelfEBot/ur3_control/scripts/splines.csv";
+    control->exportSplineToCSV(filename);
 
     // Add in a ground plane at z = 0 to ensure the robot does not move through its base during intermediate movements
     control->addGroundPlane();
@@ -52,6 +71,9 @@ int main(int argc, char * argv[])
         if(RETRIES > MAX_RETRIES){ // If the max retries has been reached report and shutdown the system
             RCLCPP_ERROR(logger, "The maximum amount of retries has been reached. Please take a new selfie.");
             RCLCPP_INFO(logger, "Shutting down system.");
+            // Send error message to the GUI
+            bool drawing_incomplete = control->current_spline_index_ != control->spline_data_.size();
+            control->sendError(drawing_incomplete);
             // Shutdown ros and join threads
             rclcpp::shutdown();
             spinner.join();
@@ -231,7 +253,8 @@ int main(int argc, char * argv[])
                     geometry_msgs::msg::Pose pose;
                     pose.position.x = waypoint[0].get<double>();
                     pose.position.y = waypoint[1].get<double>();
-                    pose.position.z = waypoint[2].get<double>();  // you can add lift here if needed
+                    // pose.position.z = waypoint[2].get<double>();  // you can add lift here if needed
+                    pose.position.z = control->calculateAverageCanvasHeight();
                     pose.orientation.x = 0.0;
                     pose.orientation.y = 1.0;
                     pose.orientation.z = 0.0;

@@ -31,3 +31,7 @@ ros2 topic pub /save_position std_msgs/msg/Empty "{}" -1
 # Repeat until all 4 Positions are done
 
 # You have now localised the robot to the canvas plane
+
+# Record a rosbag
+
+ros2 bag record /joint_states -o /home/jarred/git/DalESelfEBot/ur3_localisation/rosbags/harware_pos

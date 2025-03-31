@@ -17,6 +17,11 @@
 #include <fstream>
 #include <iostream>
 #include <rclcpp/parameter_client.hpp>
+#include <std_msgs/msg/empty.hpp>
+#include <std_msgs/msg/string.hpp>
+#include <mutex>
+#include <condition_variable>
+#include <chrono>
 
 using json = nlohmann::json;
 
@@ -33,6 +38,10 @@ public:
             const geometry_msgs::msg::Pose& start_pose, 
             const geometry_msgs::msg::Pose& end_pose, 
             int num_waypoints);
+    void sendError(bool drawing_incomplete); // Function to publish error message to GUI
+    bool generateBorderSpline(double offset); // Generates a border spline
+    bool generateSignageSpline();
+    void exportSplineToCSV(const std::string& filename);
 
     // Declare and define state enum for state machine
     enum class State {
@@ -48,13 +57,22 @@ public:
     geometry_msgs::msg::Pose safe_start_pose_;
     State state_;
     nlohmann::json spline_data_;
-    // geometry_msgs::msg::Pose safe_end_pose_;
-    // std::vector<geometry_msgs::msg::Pose> current_trajectory_;
-    // const double LIFT_HEIGHT = 0.05;  // 50mm lift height
     size_t current_spline_index_;
-    // std::vector<json> remaining_splines_;
     geometry_msgs::msg::Pose intermediate_pose_;
     geometry_msgs::msg::Pose canvas_pose_;
+
+    // Declare Publisher & Subscribers for communication with other subsystems
+    rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr toolpath_sub_; // Subscriber to listen for the toolpaths
+    rclcpp::Publisher<std_msgs::msg::String>::SharedPtr error_pub_; // Publisher to communicate to the gui
+
+    // Varaibles for waiting for toolpath
+    std::mutex mtx_;
+    std::condition_variable cv_;
+    bool flag_received_;
+
+private:
+    void toolpath_sub_callback(const std_msgs::msg::Empty::SharedPtr msg); // Toolpath Callback function
+    void process_toolath_to_json(); // Method to process toolpaths to json
 
 };
 

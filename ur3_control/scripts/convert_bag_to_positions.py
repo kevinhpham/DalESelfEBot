@@ -10,7 +10,8 @@ import os
 
 # Bag paths
 bag_paths = [
-    "/home/jarred/git/DalESelfEBot/ur3_control/rosbags/sim_toolpath/"
+    "/home/jarred/git/DalESelfEBot/ur3_control/rosbags/sim_toolpath/" # For Simulation
+    # "" # For Hardware
 ]
 
 # Load UR3e robot model
@@ -70,7 +71,7 @@ output = {
     ]
 }
 
-output_file = "/home/jarred/git/DalESelfEBot/ur3_control/scripts/sim_ground_truth.json"
+output_file = "/home/jarred/git/DalESelfEBot/ur3_control/scripts/hardware_ground_truth.json"
 with open(output_file, 'w') as f:
     json.dump(output, f, indent=4)
 

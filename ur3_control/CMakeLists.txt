@@ -13,6 +13,7 @@ find_package(Eigen3 REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(ament_cmake_gtest REQUIRED)
+find_package(std_msgs REQUIRED)
 
 # Ensure include directories
 include_directories(
@@ -39,6 +40,7 @@ ament_target_dependencies(spline_follower_lib
   nlohmann_json
   yaml-cpp
   tf2_ros
+  std_msgs
 )
 
 # Ensure all required symbols are included by explicitly linking the library

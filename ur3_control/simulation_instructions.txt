@@ -24,7 +24,12 @@ ros2 run ur3_control spline_follower
 
 # Record a rosbag
 
-ros2 bag record /joint_states -o /home/jarred/git/DalESelfEBot/ur3_control/rosbags/sim_toolpath
+ros2 bag record /joint_states -o /home/jarred/git/DalESelfEBot/ur3_control/rosbags/hardware_toolpath
+
+# Publish fake toolpath message to test out convar setup
+
+ros2 topic pub /toolpath std_msgs/msg/Empty --once
+
 
 
 

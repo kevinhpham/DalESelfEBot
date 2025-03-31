@@ -22,8 +22,12 @@ std::vector<Pose> loadCornerPositions(const std::string& filename) {
 }
 
 TEST(CornerPositionsStrictTest, PerFieldComparison) {
-    const std::string recorded_file = "/home/jarred/git/DalESelfEBot/ur3_localisation/config/params.yaml";
+    // Use for simulation testing
+    const std::string recorded_file = "/home/jarred/git/DalESelfEBot/ur3_localisation/config/sim_params.yaml";
     const std::string ground_truth_file = "/home/jarred/git/DalESelfEBot/ur3_localisation/scripts/sim_ground_truth.yaml";
+    // Use for simulation hardware
+    // const std::string recorded_file = "/home/jarred/git/DalESelfEBot/ur3_localisation/config/hardware_params.yaml";
+    // const std::string ground_truth_file = "/home/jarred/git/DalESelfEBot/ur3_localisation/scripts/hardware_ground_truth.yaml";
 
     auto recorded = loadCornerPositions(recorded_file);
     auto expected = loadCornerPositions(ground_truth_file);

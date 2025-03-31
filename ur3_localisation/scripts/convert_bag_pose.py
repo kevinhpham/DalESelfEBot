@@ -12,10 +12,10 @@ import os
 
 # Your 4 ROS bag paths (update as needed)
 bag_paths = [
-    "/home/jarred/git/DalESelfEBot/ur3_localisation/rosbags/sim_pos1",
-    "/home/jarred/git/DalESelfEBot/ur3_localisation/rosbags/sim_pos2",
-    "//home/jarred/git/DalESelfEBot/ur3_localisation/rosbags/sim_pos3",
-    "/home/jarred/git/DalESelfEBot/ur3_localisation/rosbags/sim_pos4"
+    "/home/jarred/git/DalESelfEBot/ur3_localisation/rosbags/hardware_pos1",
+    "/home/jarred/git/DalESelfEBot/ur3_localisation/rosbags/hardware_pos2",
+    "//home/jarred/git/DalESelfEBot/ur3_localisation/rosbags/hardware_pos3",
+    "/home/jarred/git/DalESelfEBot/ur3_localisation/rosbags/hardware_pos4"
 ]
 
 # Path to your UR3e URDF
@@ -85,7 +85,7 @@ for bag_path in bag_paths:
 
 # Output to YAML
 output = {'corner_positions': corner_positions}
-output_file = "/home/jarred/git/DalESelfEBot/ur3_localisation/scripts/sim_ground_truth.yaml"
+output_file = "/home/jarred/git/DalESelfEBot/ur3_localisation/scripts/hardware_ground_truth.yaml"
 
 with open(output_file, 'w') as f:
     yaml.dump(output, f)
