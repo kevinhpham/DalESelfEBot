@@ -1,0 +1,7 @@
+# Goal
+---
+# Result
+sensor_msgs/Image processed_image
+---
+# Feedback (optional)
+string status
