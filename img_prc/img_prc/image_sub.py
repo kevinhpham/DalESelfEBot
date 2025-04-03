@@ -9,7 +9,7 @@ class ImageSubscriber(Node):
         super().__init__('image_subscriber')
         self.subscription = self.create_subscription(
             Image,
-            'processed_image',
+            'edge_image',
             self.listener_callback,
             10)
         self.subscription  # prevent unused variable warning

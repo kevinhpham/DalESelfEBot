@@ -10,18 +10,28 @@ class ImgClient:
         self.node = rclpy.create_node('edge_detection_client')
         self.client = ActionClient(self.node, Img, 'process_edge_image')
         self.bridge = CvBridge()  # Convert ROS Image messages to OpenCV format
-
-        # Timer to send a goal every 10 seconds
-        self.timer = self.node.create_timer(5.0, self.send_goal_timer_callback)
-
-    def send_goal(self):
-        goal_msg = Img.Goal()  # No arguments needed for this goal in this case
-
-        # Send goal to the action server asynchronously
-        send_goal_future = self.client.send_goal_async(goal_msg, feedback_callback=self.feedback_callback)
+        self.subscription = self.node.create_subscription(
+            Image,
+            'webcam_image',
+            self.listener_callback,
+            10)
         
-        # When the goal is completed, the result is handled by add_done_callback
-        send_goal_future.add_done_callback(self.result_callback)
+        # Timer to send a goal every 5 seconds
+        self.timer = self.node.create_timer(5.0, self.send_goal_timer_callback)
+        self.latest_image = None
+        
+    def send_goal(self):
+        if self.latest_image is not None:
+            goal_msg = Img.Goal()
+            goal_msg.image = self.latest_image  # Set the latest image in the goal message
+
+            # Send goal to the action server asynchronously
+            send_goal_future = self.client.send_goal_async(goal_msg, feedback_callback=self.feedback_callback)
+            
+            # When the goal is completed, the result is handled by add_done_callback
+            send_goal_future.add_done_callback(self.result_callback)
+        else:
+            print("No image received yet.")
 
     def send_goal_timer_callback(self):
         print("Sending goal to action server.")
@@ -56,11 +66,14 @@ class ImgClient:
         else:
             print("The result was empty, action failed or was preempted.")
 
-
     def wait_for_action_server(self):
         # Wait for the action server to be available
         while not self.client.wait_for_server(timeout_sec=1.0):
             print("Waiting for action server to become available...")
+
+    def listener_callback(self, msg):
+        # Convert ROS Image message to OpenCV image
+        self.latest_image = msg
 
 def main(args=None):
     rclpy.init(args=args)
@@ -69,7 +82,7 @@ def main(args=None):
     # Wait for the action server to be available
     edge_detection_client.wait_for_action_server()
     
-    print("Action client is now ready and sending requests every 10 seconds.")
+    print("Action client is now ready and sending requests every 5 seconds.")
     
     # Start spinning the node to process the timer callbacks
     rclpy.spin(edge_detection_client.node)

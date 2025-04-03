@@ -1,4 +1,5 @@
 # Goal
+sensor_msgs/Image image
 ---
 # Result
 sensor_msgs/Image processed_image
