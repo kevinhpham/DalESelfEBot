@@ -8,13 +8,12 @@ find_package(moveit_ros_planning_interface REQUIRED)
 find_package(moveit_ros_planning REQUIRED)
 find_package(moveit_ros_move_group REQUIRED)
 find_package(moveit_core REQUIRED)
-# find_package(moveit_visual_tools REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(yaml-cpp REQUIRED)
-# find_package(launch REQUIRED)
-# find_package(launch_ros REQUIRED)
+find_package(ament_cmake_gtest REQUIRED)
+find_package(std_msgs REQUIRED)
 
 # Ensure include directories
 include_directories(
@@ -41,6 +40,7 @@ ament_target_dependencies(spline_follower_lib
   nlohmann_json
   yaml-cpp
   tf2_ros
+  std_msgs
 )
 
 # Ensure all required symbols are included by explicitly linking the library
@@ -68,28 +68,22 @@ ament_target_dependencies(spline_follower
   yaml-cpp
 )
 
+ament_add_gtest(test_tool_path_accuracy unit_testing/test_tool_path_accuracy.cpp)
+target_link_libraries(test_tool_path_accuracy nlohmann_json::nlohmann_json)
+
+ament_add_gtest(test_tool_path_z_consistency unit_testing/test_tool_path_z_consistency.cpp)
+target_link_libraries(test_tool_path_z_consistency nlohmann_json::nlohmann_json yaml-cpp)
+
 # Install the library and executable
 install(
   TARGETS spline_follower_lib spline_follower
   DESTINATION lib/${PROJECT_NAME}
 )
 
-# # Install the header files
-# install(
-#   DIRECTORY include/
-#   DESTINATION include/
-# )
-
 # Install the config directory (JSON files)
 install(DIRECTORY config
   DESTINATION share/${PROJECT_NAME}/
 )
-
-# # Install the models directory (including ur3e.urdf)
-# install(
-#   DIRECTORY models
-#   DESTINATION share/${PROJECT_NAME}/
-# )
 
 install(
   DIRECTORY launch
