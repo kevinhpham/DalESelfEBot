@@ -142,7 +142,8 @@ def launch_setup(context, *args, **kwargs):
     ompl_planning_pipeline_config["move_group"].update(ompl_planning_yaml)
 
     # Trajectory Execution Configuration
-    controllers_yaml = load_yaml("ur_moveit_config", "config/controllers.yaml")
+    controllers_yaml = load_yaml("ur_moveit_config", "config/controllers.yaml") # UR Original Version
+    # controllers_yaml = load_yaml("ur3_control", "config/controllers.yaml") # Our Version 
     # the scaled_joint_trajectory_controller does not work on fake hardware
     change_controllers = context.perform_substitution(use_sim_time)
     if change_controllers == "true":

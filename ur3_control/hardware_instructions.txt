@@ -1,9 +1,38 @@
-# Launch UR Driver for Hardware
+# Connect your computer to the UR3/UR3e via Ethernet
+
+# Locate the Robot IP Address - Located at: Three Dashes > About (Top Right Corner)
+
+# Ping the Robot IP
+ping 192.168.0.250
+ping 192.168.0.192
+
+# Acquire your computers IP Address
+ifconfig
+192.168.0.100
+
+# Update the Host IP and Host Name to your IP - Located at: URCaps > External Control (Top Left Corner)
+
+# Turn on the Play Button (Bottom Right Corner)
+
+# Launch the Driver using the Robot IP
+ros2 launch ur_robot_driver ur_control.launch.py ur_type:=ur3e robot_ip:=192.168.0.250 launch_rviz:=true
+
+###### ===== Now you are connected ===== #####
+
+# Build Package
+
+cd ~/ros2_ws
+colcon build --packages-select ur3_control --symlink-install
+source install/setup.bash
 
 # Launch MoveIt
 
 ros2 launch ur_moveit_config ur_moveit.launch.py ur_type:=ur3e launch_rviz:=false
 
-# Launch Spline Follower
+# Launch Control Node
 
 ros2 run ur3_control spline_follower
+
+# === or === #
+
+ros2 launch ur3_control moveit_stack.launch.py ur_type:=ur3e launch_rviz:=false // Use if we need the kinematics solver set to KDL 

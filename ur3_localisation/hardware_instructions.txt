@@ -4,10 +4,11 @@
 
 # Ping the Robot IP
 ping 192.168.0.250
+ping 192.168.0.192
 
 # Acquire your computers IP Address
 ifconfig
-192.168.1.100
+192.168.0.100
 
 # Update the Host IP and Host Name to your IP - Located at: URCaps > External Control (Top Left Corner)
 
@@ -15,6 +16,7 @@ ifconfig
 
 # Launch the Driver using the Robot IP
 ros2 launch ur_robot_driver ur_control.launch.py ur_type:=ur3e robot_ip:=192.168.0.250 launch_rviz:=true
+ros2 launch ur_robot_driver ur_control.launch.py ur_type:=ur3e robot_ip:=192.168.0.192 reverse_ip:=192.168.0.100 launch_rviz:=true
 
 ## Now that you are connected ########################################################################################################
 
@@ -34,4 +36,4 @@ ros2 topic pub /save_position std_msgs/msg/Empty "{}" -1
 
 # Record a rosbag
 
-ros2 bag record /joint_states -o /home/jarred/git/DalESelfEBot/ur3_localisation/rosbags/harware_pos
+ros2 bag record /joint_states -o /home/jarred/git/DalESelfEBot/ur3_localisation/rosbags/harware_pos1

@@ -42,7 +42,8 @@ public:
     bool generateBorderSpline(double offset); // Generates a border spline
     bool generateSignageSpline();
     void exportSplineToCSV(const std::string& filename);
-
+    void waitForContinue(); // Wait function for async debugging
+    
     // Declare and define state enum for state machine
     enum class State {
         INIT,
@@ -50,6 +51,7 @@ public:
         MOVE_TO_CANVAS,
         MOVE_THROUGH_DRAWING_TRAJECTORY,
         MOVE_OFF_CANVAS,
+        IDLE,
         STOP
     };
 
@@ -64,15 +66,27 @@ public:
     // Declare Publisher & Subscribers for communication with other subsystems
     rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr toolpath_sub_; // Subscriber to listen for the toolpaths
     rclcpp::Publisher<std_msgs::msg::String>::SharedPtr error_pub_; // Publisher to communicate to the gui
+    rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr shutdown_sub_; // Subscriber to recieve a shutdown message
+    rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr continue_sub_; // Debug subscriber to allow asynchronous state execution
 
     // Varaibles for waiting for toolpath
     std::mutex mtx_;
     std::condition_variable cv_;
     bool flag_received_;
 
+    // Variables for shutting down the system
+    bool shutdown_;
+
+    // Variables for Debug
+    std::mutex continue_mutex_;
+    std::condition_variable continue_cv_;
+    bool continue_received_ = false; // Debug flag
+
 private:
     void toolpath_sub_callback(const std_msgs::msg::Empty::SharedPtr msg); // Toolpath Callback function
     void process_toolath_to_json(); // Method to process toolpaths to json
+    void shutdownCallback(const std_msgs::msg::Empty::SharedPtr msg); // Shutdown sub callback
+    void continueCallback(const std_msgs::msg::Empty::SharedPtr msg); // Debug sub callback
 
 };
 

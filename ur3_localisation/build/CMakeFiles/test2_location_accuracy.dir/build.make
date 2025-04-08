@@ -92,9 +92,9 @@ test2_location_accuracy_EXTERNAL_OBJECTS =
 
 test2_location_accuracy: CMakeFiles/test2_location_accuracy.dir/unit_testing/test2_location_accuracy.cpp.o
 test2_location_accuracy: CMakeFiles/test2_location_accuracy.dir/build.make
-test2_location_accuracy: /usr/lib/x86_64-linux-gnu/libgtest_main.a
+test2_location_accuracy: /home/jarred/anaconda3/lib/libgtest_main.so.1.10.0
 test2_location_accuracy: /usr/lib/x86_64-linux-gnu/libyaml-cpp.so.0.7.0
-test2_location_accuracy: /usr/lib/x86_64-linux-gnu/libgtest.a
+test2_location_accuracy: /home/jarred/anaconda3/lib/libgtest.so.1.10.0
 test2_location_accuracy: CMakeFiles/test2_location_accuracy.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/jarred/git/DalESelfEBot/ur3_localisation/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable test2_location_accuracy"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/test2_location_accuracy.dir/link.txt --verbose=$(VERBOSE)

@@ -6,12 +6,15 @@ using namespace std::chrono_literals;
 using json = nlohmann::json;
 
 // Constructor - init member variables: Node name to: spline_follower, state starts in init and initial spline index is 0
-SplineFollower::SplineFollower() : Node("spline_follower"), state_(State::INIT), current_spline_index_(0), flag_received_(false) {
+SplineFollower::SplineFollower() : Node("spline_follower"), state_(State::INIT), current_spline_index_(0), flag_received_(false), shutdown_(false) {
     RCLCPP_INFO(this->get_logger(), "SplineFollower node created.");
 
     // Initalise Publishers and Subscribers for communication with other subsystems
     toolpath_sub_ = this->create_subscription<std_msgs::msg::Empty>("/toolpath", 10, std::bind(&SplineFollower::toolpath_sub_callback, this, std::placeholders::_1));
     error_pub_ = this->create_publisher<std_msgs::msg::String>("/control_error", 10);
+    shutdown_sub_ = this->create_subscription<std_msgs::msg::Empty>("/shutdown", 10, std::bind(&SplineFollower::shutdownCallback, this, std::placeholders::_1));
+    continue_sub_ = this->create_subscription<std_msgs::msg::Empty>("/continue_execution", 10, std::bind(&SplineFollower::continueCallback, this, std::placeholders::_1));
+
 }
 
 // Add in a plane at z = 0 so that moveit avoids colliding with the robot base
@@ -160,7 +163,7 @@ double SplineFollower::calculateAverageCanvasHeight() {
 void SplineFollower::toolpath_sub_callback(const std_msgs::msg::Empty::SharedPtr msg){
 
     std::unique_lock<std::mutex> lock(mtx_);
-    // RCLCPP_INFO(this->get_logger(), "Received: '%s'", msg->data.c_str());
+    RCLCPP_INFO(this->get_logger(), "Received a new set of toolpaths.");
     // Set the flag and notify main thread
     flag_received_ = true;
     cv_.notify_one();
@@ -300,6 +303,7 @@ bool SplineFollower::generateBorderSpline(double offset) { // Offset in metres
     return true;
 }
 
+// Export the drawing splines to a CSV for visualisation
 void SplineFollower::exportSplineToCSV(const std::string& filename) {
 
     // Load the YAML file with corner positions
@@ -340,6 +344,7 @@ void SplineFollower::exportSplineToCSV(const std::string& filename) {
     RCLCPP_INFO(this->get_logger(), "Exported all splines and localisation to %s", filename.c_str());
 }
 
+// Generate a DALE Signature in the botto left hand corner
 bool SplineFollower::generateSignageSpline() {
     // Choose a starting position in the lower left of the canvas
     if (!spline_data_.contains("splines") || spline_data_["splines"].empty()) {
@@ -395,4 +400,47 @@ bool SplineFollower::generateSignageSpline() {
 
     RCLCPP_INFO(this->get_logger(), "Logo spline (DALE) added to spline data.");
     return true;
+}
+
+// Callback for shutdown subscriber to allow entrance into stop state
+void SplineFollower::shutdownCallback(const std_msgs::msg::Empty::SharedPtr msg)
+{
+    RCLCPP_INFO(this->get_logger(), "Received shutdown signal.");
+    shutdown_ = true;
+
+    if(state_ == SplineFollower::State::IDLE){
+        std::unique_lock<std::mutex> lock(mtx_);
+        // Set the flag and notify main thread
+        flag_received_ = true;
+        cv_.notify_one();
+    }
+}
+
+// Callback for debug subscriber to allow asynchronous state execution
+void SplineFollower::continueCallback(const std_msgs::msg::Empty::SharedPtr msg)
+{
+    if(state_ != State::IDLE){
+        RCLCPP_INFO(this->get_logger(), "Received continue signal.");
+        {
+            std::lock_guard<std::mutex> lock(continue_mutex_);
+            continue_received_ = true;
+        }
+        continue_cv_.notify_one();
+    }
+}
+
+// Wait function for async debugging
+void SplineFollower::waitForContinue()
+{
+    {
+        std::lock_guard<std::mutex> lock(continue_mutex_);
+        continue_received_ = false;  // Reset the flag before waiting
+    }
+
+    RCLCPP_INFO(this->get_logger(), "Waiting for continue signal on /continue_execution...");
+
+    std::unique_lock<std::mutex> lock(continue_mutex_);
+    continue_cv_.wait(lock, [this]() { return continue_received_; });
+
+    RCLCPP_INFO(this->get_logger(), "Continuing execution after signal.");
 }
