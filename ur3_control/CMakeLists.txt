@@ -35,7 +35,6 @@ ament_target_dependencies(spline_follower_lib
   moveit_ros_planning_interface
   moveit_ros_planning
   moveit_core
-  # moveit_visual_tools
   Eigen3
   nlohmann_json
   yaml-cpp
@@ -62,7 +61,6 @@ ament_target_dependencies(spline_follower
   moveit_ros_planning_interface
   moveit_ros_planning
   moveit_core
-  # moveit_visual_tools
   Eigen3
   nlohmann_json
   yaml-cpp
@@ -91,4 +89,4 @@ install(
 )
 
 ament_export_dependencies(rosidl_default_runtime)
-ament_package()
+# ament_package()

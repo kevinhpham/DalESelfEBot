@@ -12,10 +12,10 @@ import os
 
 # Your 4 ROS bag paths (update as needed)
 bag_paths = [
-    "/home/jarred/git/DalESelfEBot/ur3_localisation/rosbags/hardware_pos1",
-    "/home/jarred/git/DalESelfEBot/ur3_localisation/rosbags/hardware_pos2",
-    "//home/jarred/git/DalESelfEBot/ur3_localisation/rosbags/hardware_pos3",
-    "/home/jarred/git/DalESelfEBot/ur3_localisation/rosbags/hardware_pos4"
+    "/home/jarred/git/DalESelfEBot/ur3_localisation/rosbags/harware_pos1",
+    "/home/jarred/git/DalESelfEBot/ur3_localisation/rosbags/harware_pos2",
+    "/home/jarred/git/DalESelfEBot/ur3_localisation/rosbags/harware_pos3",
+    "/home/jarred/git/DalESelfEBot/ur3_localisation/rosbags/harware_pos4"
 ]
 
 # Path to your UR3e URDF

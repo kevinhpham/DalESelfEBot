@@ -42,6 +42,7 @@ int main(int argc, char * argv[])
     //     std::unique_lock<std::mutex> lock(control->mtx_);
     //     control->cv_.wait(lock, [& control] { return control->flag_received_; });
     //     std::cout << "Main thread received the signal!" << std::endl;
+            // control->flag_received_ = false;
     // }
 
     // Load up the splines for drawing
@@ -70,14 +71,14 @@ int main(int argc, char * argv[])
         // Check retries and shutdown if max retries has been reached
         if(RETRIES > MAX_RETRIES){ // If the max retries has been reached report and shutdown the system
             RCLCPP_ERROR(logger, "The maximum amount of retries has been reached. Please take a new selfie.");
-            RCLCPP_INFO(logger, "Shutting down system.");
             // Send error message to the GUI
             bool drawing_incomplete = control->current_spline_index_ != control->spline_data_.size();
             control->sendError(drawing_incomplete);
-            // Shutdown ros and join threads
-            rclcpp::shutdown();
-            spinner.join();
-            return 0;
+            control->state_ = SplineFollower::State::IDLE;
+        }
+        // If we recieve the shutdown signal enter the stop state - return home and shutodwn safely. 
+        if(control->shutdown_){
+            control->state_ = SplineFollower::State::STOP;
         }
         switch (control->state_) {
             // State init: Moves to a safe start pose using the path planner.
@@ -85,10 +86,7 @@ int main(int argc, char * argv[])
             {
                 RCLCPP_INFO(logger, "State: Init");
 
-                std::cout << "Press 'q' to continue..." << std::endl;
-                for (std::string line; std::getline(std::cin, line); ) {
-                    if (line == "q") break;
-                }
+                // control->waitForContinue(); // For debug
 
                 // Set the safe start pose: saved to control->safe_start_pose_
                 control->setSafeStartPose();
@@ -104,6 +102,25 @@ int main(int argc, char * argv[])
                 shoulder_lift_joint_constraint.set__tolerance_below(M_PI/4.0); // Set a reasonable tolerance above
                 shoulder_lift_joint_constraint.set__weight(1.0); // Set the weight
                 joint_constraints.push_back(shoulder_lift_joint_constraint);
+
+                // --- Wrist 1 Constraint (-140 deg = -2.443 radians) ---
+                moveit_msgs::msg::JointConstraint wrist_1_joint_constraint;
+                wrist_1_joint_constraint.set__joint_name("wrist_1_joint");
+                wrist_1_joint_constraint.set__position(-2.443);
+                wrist_1_joint_constraint.set__tolerance_above(M_PI / 2.0); // ±90 deg
+                wrist_1_joint_constraint.set__tolerance_below(M_PI / 2.0);
+                wrist_1_joint_constraint.set__weight(1.0);
+                joint_constraints.push_back(wrist_1_joint_constraint);
+
+                // --- Wrist 2 Constraint (-90 deg = -M_PI/2) ---
+                moveit_msgs::msg::JointConstraint wrist_2_joint_constraint;
+                wrist_2_joint_constraint.set__joint_name("wrist_2_joint");
+                wrist_2_joint_constraint.set__position(-M_PI / 2.0);
+                wrist_2_joint_constraint.set__tolerance_above(M_PI / 2.0); // ±90 deg
+                wrist_2_joint_constraint.set__tolerance_below(M_PI / 2.0);
+                wrist_2_joint_constraint.set__weight(1.0);
+                joint_constraints.push_back(wrist_2_joint_constraint);
+
                 constraint.set__joint_constraints(joint_constraints); // Apply the joint constraint to the path constraint
 
                 // Generate a movement plan to the safe start pose
@@ -113,19 +130,17 @@ int main(int argc, char * argv[])
                 move_group_interface.setPlanningTime(10.0); // Set the planning time (generous for constrained path)
                 move_group_interface.setPlannerId("PTP"); // Set the planner id to point-to-point
                 moveit::core::MoveItErrorCode response;
-                response = move_group_interface.plan(plan); // Generate the plan - save the response 
+                response = move_group_interface.plan(plan); // Generate the plan - save the response       
 
-                // Check repose and execute plan if safe
-                if(response == moveit::core::MoveItErrorCode::SUCCESS){ // If the plan has succeded execute and move to next state
-                    move_group_interface.execute(plan); // Execute the plan
+                // Check repose and execute plan if safe. If the plan has succeded execute (check execution response) and move to next state.
+                if(response == moveit::core::MoveItErrorCode::SUCCESS && move_group_interface.execute(plan) == moveit::core::MoveItErrorCode::SUCCESS){
                     RCLCPP_INFO(logger, "Moved to safe start pose");
                     RETRIES = 0; // Ensure retries is reset to 0
                     // Move to next state
                     control->state_ = SplineFollower::State::MOVE_TO_INTERMEDIATE_POS;
                 }
                 else{ // If the plan has failed remain in this state and retry
-                    RCLCPP_ERROR(logger, "The planner has failed, attempting to plan again.");
-                    // RCLCPP_INFO(logger, "Current retries is %d", RETRIES, " out of %d", MAX_RETRIES, " available.");
+                    RCLCPP_ERROR(logger, "The planner/executor has failed, attempting to plan/execute again.");
                     RETRIES++; // Increment retries up
                 }
 
@@ -138,10 +153,7 @@ int main(int argc, char * argv[])
             {
                 RCLCPP_INFO(logger, "State: Move to intermediate pos.");
 
-                std::cout << "Press 'q' to continue..." << std::endl;
-                for (std::string line; std::getline(std::cin, line); ) {
-                    if (line == "q") break;
-                }
+                // control->waitForContinue(); // For debug
 
                 // Ensure we have a next spline to move to
                 if (control->current_spline_index_ < control->spline_data_["splines"].size()) {
@@ -188,7 +200,7 @@ int main(int argc, char * argv[])
                 } 
                 else {
                     // If no more splines left, go to STOP state
-                    control->state_ = SplineFollower::State::STOP;
+                    control->state_ = SplineFollower::State::IDLE;
                 }
                 break;
             }
@@ -197,10 +209,7 @@ int main(int argc, char * argv[])
             {
                 RCLCPP_INFO(logger, "State: Move to canvas.");
 
-                std::cout << "Press 'q' to continue..." << std::endl;
-                for (std::string line; std::getline(std::cin, line); ) {
-                    if (line == "q") break;
-                }
+                // control->waitForContinue(); // For debug
 
                 // Calculate the average Z position of the canvas
                 double canvas_z = control->calculateAverageCanvasHeight();
@@ -242,10 +251,7 @@ int main(int argc, char * argv[])
             {
                 RCLCPP_INFO(logger, "State: Move through drawing trajectory.");
 
-                std::cout << "Press 'q' to continue..." << std::endl;
-                for (std::string line; std::getline(std::cin, line); ) {
-                    if (line == "q") break;
-                }
+                // control->waitForContinue(); // For debug
 
                 // Fetch the way points from our spline data memeber
                 std::vector<geometry_msgs::msg::Pose> waypoints;
@@ -292,10 +298,7 @@ int main(int argc, char * argv[])
             {
                 RCLCPP_INFO(logger, "State: Move off canvas.");
 
-                std::cout << "Press 'q' to continue..." << std::endl;
-                for (std::string line; std::getline(std::cin, line); ) {
-                    if (line == "q") break;
-                }
+                // control->waitForContinue(); // For debug
 
                 // Get the canvas height
                 double canvas_z = control->calculateAverageCanvasHeight();
@@ -330,22 +333,60 @@ int main(int argc, char * argv[])
                         RETRIES = 0; // Ensure retries is reset to 0
                     } else { // If all splines are completed move to stop state
                         RCLCPP_INFO(logger, "All splines completed.");
-                        control->state_ = SplineFollower::State::STOP;
+                        control->state_ = SplineFollower::State::IDLE;
                         RETRIES = 0; // Ensure retries is reset to 0
                     }
                 }
 
                 break;
-            }                
+            }
+            
+            // State idle
+            case SplineFollower::State::IDLE:
+            {
+                RCLCPP_INFO(logger, "State: Idle.");
+                RCLCPP_INFO(logger, "Waiting for a new drawaing.");
+
+                // Main thread waits for the flag
+                {
+                    std::unique_lock<std::mutex> lock(control->mtx_);
+                    control->cv_.wait(lock, [& control] { return control->flag_received_; });
+                    std::cout << "Main thread received the signal!" << std::endl;
+                    control->flag_received_ = false;
+                }
+
+                // Load up the splines for drawing
+                control->loadSplines();
+
+                if (control->spline_data_["splines"].size() > 0){
+                    RCLCPP_INFO(logger, "Recived new drawing.");
+                    // Generate border - Placed at the start of the queue
+                    double offset = 0.05; // 5 cm offset
+                    if(!control->generateBorderSpline(offset)) RCLCPP_ERROR(logger, "Failed to generate border.");
+
+                    // Generate signature - Placed at the end of the queue
+                    // if(!control->generateSignageSpline()) RCLCPP_ERROR(logger, "Failed to generate signature");
+
+                    std::cout << "There are " << control->spline_data_["splines"].size() << " splines to draw." << std::endl;
+                    std::string filename = "/home/jarred/git/DalESelfEBot/ur3_control/scripts/splines.csv";
+                    control->exportSplineToCSV(filename);
+
+                    control->current_spline_index_ = 0;
+                    control->state_ = SplineFollower::State::MOVE_TO_INTERMEDIATE_POS;
+                }
+                else{
+                    RCLCPP_ERROR(logger, "No splines provided to draw. Please send new toolpath. Remaining idle.");
+                }
+
+                break;
+            }
+
             // State stop: return home and close the program
             case SplineFollower::State::STOP:
 
                 RCLCPP_INFO(logger, "State: Stop.");
 
-                std::cout << "Press 'q' to continue..." << std::endl;
-                for (std::string line; std::getline(std::cin, line); ) {
-                    if (line == "q") break;
-                }
+                // control->waitForContinue(); // For debug
 
                 RCLCPP_INFO(logger, "Returning home.");
 

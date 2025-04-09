@@ -2,7 +2,7 @@
 
 ln -s ~/git/DalESelfEBot/ur3_control ~/ros2_ws/src/ur3_control
 
-# Build Packages
+# Build Package
 
 cd ~/ros2_ws
 colcon build --packages-select ur3_control --symlink-install
@@ -16,11 +16,13 @@ ros2 launch ur_robot_driver ur_control.launch.py ur_type:=ur3e use_fake_hardware
 
 ros2 launch ur_moveit_config ur_moveit.launch.py ur_type:=ur3e launch_rviz:=false
 
-ros2 launch ur3_control moveit_stack.launch.py ur_type:=ur3e launch_rviz:=false // Use if we need the kinematics solver set to KDL 
-
 # Launch Control Node
 
 ros2 run ur3_control spline_follower
+
+# === or === #
+
+ros2 launch ur3_control moveit_stack.launch.py ur_type:=ur3e launch_rviz:=false // Use if we need the kinematics solver set to KDL 
 
 # Record a rosbag
 
