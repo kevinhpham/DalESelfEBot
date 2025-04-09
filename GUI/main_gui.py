@@ -10,7 +10,7 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("Robot Arm Drawing Control")
-        # Set an initial size, you can adjust this
+        # Set an initial size, you can adjust this v
         self.setGeometry(100, 100, 1000, 750) 
 
         # --- Main Layout ---
