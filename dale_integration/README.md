@@ -15,7 +15,11 @@ This package integrates the following subsystems:
 ## System Startup Instructions
 
 ### 1. Perform Calibration
-Follow the calibration process documented in the system setup guide.
+Use the following command, replacing `<>` with your robot’s IP address and `"path"` with your calibration file:
+```bash
+ros2 launch ur_calibration calibration_correction.launch.py \
+  robot_ip:=<ROBOT_IP> target:="path/to/your_config.yaml"
+```
 
 ### 2. Connect to the Robot
 Use the following command, replacing `<>` with your robot’s IP address and `"path"` with your calibration file:
