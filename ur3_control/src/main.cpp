@@ -55,12 +55,16 @@ int main(int argc, char * argv[])
     // Generate signature - Placed at the end of the queue
     // if(!control->generateSignageSpline()) RCLCPP_ERROR(logger, "Failed to generate signature");
 
+
     std::cout << "There are " << control->spline_data_["splines"].size() << " splines to draw." << std::endl;
     std::string filename = "/home/jarred/git/DalESelfEBot/ur3_control/scripts/splines.csv";
     control->exportSplineToCSV(filename);
 
     // Add in a ground plane at z = 0 to ensure the robot does not move through its base during intermediate movements
     control->addGroundPlane();
+
+    geometry_msgs::msg::Pose pose = move_group_interface.getCurrentPose().pose;
+    std::cout << "Current z = " << pose.position.z << std::endl;
 
     // Set the maximum amount of retries for a state to attempt its objective
     unsigned int MAX_RETRIES = 3;
@@ -86,18 +90,22 @@ int main(int argc, char * argv[])
             {
                 RCLCPP_INFO(logger, "State: Init");
 
-                // control->waitForContinue(); // For debug
+                control->addCanvasPlane(); // Add in the canvas collision object
+
+                control->waitForContinue(); // For debug
 
                 // Set the safe start pose: saved to control->safe_start_pose_
                 control->setSafeStartPose();
 
-                // Create a path constraint and apply a joint constraint to it for the 'shoulder_lift_joint'
-                double joint_target = -M_PI/4.0; // Set to -45 deg
+                // Create a path constraint and joint constraints
                 moveit_msgs::msg::Constraints constraint; // Create path constraint msg
                 std::vector<moveit_msgs::msg::JointConstraint> joint_constraints; // Create joint constraint vector
+
+                 // --- Shoulder Lift Joint Constraint (locked around -45 degrees ±45 deg) ---
+                double shoulder_joint_target = -M_PI/4.0; // Set to -45 deg
                 moveit_msgs::msg::JointConstraint shoulder_lift_joint_constraint;  // Create specific joint constraint
                 shoulder_lift_joint_constraint.set__joint_name("shoulder_lift_joint"); // Set to shoulder_lift_joint
-                shoulder_lift_joint_constraint.set__position(joint_target); // Set the joint target value
+                shoulder_lift_joint_constraint.set__position(shoulder_joint_target); // Set the joint target value
                 shoulder_lift_joint_constraint.set__tolerance_above(M_PI/4.0); // Set a reasonable tolerance above
                 shoulder_lift_joint_constraint.set__tolerance_below(M_PI/4.0); // Set a reasonable tolerance above
                 shoulder_lift_joint_constraint.set__weight(1.0); // Set the weight
@@ -106,7 +114,8 @@ int main(int argc, char * argv[])
                 // --- Wrist 1 Constraint (-140 deg = -2.443 radians) ---
                 moveit_msgs::msg::JointConstraint wrist_1_joint_constraint;
                 wrist_1_joint_constraint.set__joint_name("wrist_1_joint");
-                wrist_1_joint_constraint.set__position(-2.443);
+                wrist_1_joint_constraint.set__position(-140.0/180.0*M_PI); // Wrist Out
+                // wrist_1_joint_constraint.set__position(50.0/180.0*M_PI); // Wrist In
                 wrist_1_joint_constraint.set__tolerance_above(M_PI / 2.0); // ±90 deg
                 wrist_1_joint_constraint.set__tolerance_below(M_PI / 2.0);
                 wrist_1_joint_constraint.set__weight(1.0);
@@ -115,7 +124,8 @@ int main(int argc, char * argv[])
                 // --- Wrist 2 Constraint (-90 deg = -M_PI/2) ---
                 moveit_msgs::msg::JointConstraint wrist_2_joint_constraint;
                 wrist_2_joint_constraint.set__joint_name("wrist_2_joint");
-                wrist_2_joint_constraint.set__position(-M_PI / 2.0);
+                wrist_2_joint_constraint.set__position(-M_PI / 2.0); // Wrist Out
+                // wrist_2_joint_constraint.set__position(-275.0/180.0*M_PI); // Wrist In
                 wrist_2_joint_constraint.set__tolerance_above(M_PI / 2.0); // ±90 deg
                 wrist_2_joint_constraint.set__tolerance_below(M_PI / 2.0);
                 wrist_2_joint_constraint.set__weight(1.0);
@@ -136,6 +146,16 @@ int main(int argc, char * argv[])
                 if(response == moveit::core::MoveItErrorCode::SUCCESS && move_group_interface.execute(plan) == moveit::core::MoveItErrorCode::SUCCESS){
                     RCLCPP_INFO(logger, "Moved to safe start pose");
                     RETRIES = 0; // Ensure retries is reset to 0
+                    control->planning_scene_interface_.removeCollisionObjects({"canvas_plane"}); // Remove canvas collision object
+                    rclcpp::sleep_for(std::chrono::milliseconds(10)); // Wait for scene to update
+                    // Remove the init collision objects
+                    control->planning_scene_interface_.removeCollisionObjects({"obstacle_behind"});
+                    rclcpp::sleep_for(std::chrono::milliseconds(10)); // Wait for scene to update
+                    control->planning_scene_interface_.removeCollisionObjects({"obstacle_front"});
+                    rclcpp::sleep_for(std::chrono::milliseconds(10)); // Wait for scene to update
+                    control->planning_scene_interface_.removeCollisionObjects({"obstacle_left"});
+                    rclcpp::sleep_for(std::chrono::milliseconds(10)); // Wait for scene to update
+                    control->planning_scene_interface_.removeCollisionObjects({"obstacle_right"});
                     // Move to next state
                     control->state_ = SplineFollower::State::MOVE_TO_INTERMEDIATE_POS;
                 }
@@ -153,10 +173,12 @@ int main(int argc, char * argv[])
             {
                 RCLCPP_INFO(logger, "State: Move to intermediate pos.");
 
-                // control->waitForContinue(); // For debug
+                control->waitForContinue(); // For debug
 
                 // Ensure we have a next spline to move to
                 if (control->current_spline_index_ < control->spline_data_["splines"].size()) {
+
+                    geometry_msgs::msg::Pose current_pose = move_group_interface.getCurrentPose().pose; // Fetch current pose
                     
                     // Get the first waypoint of the next spline
                     json next_spline = control->spline_data_["splines"][control->current_spline_index_];
@@ -165,7 +187,8 @@ int main(int argc, char * argv[])
                     // Calculate the intermediate pose (100mm above the first waypoint)
                     control->intermediate_pose_.position.x = first_waypoint[0].get<double>();
                     control->intermediate_pose_.position.y = first_waypoint[1].get<double>();
-                    control->intermediate_pose_.position.z = first_waypoint[2].get<double>() + 0.05;  // 50mm above
+                    // control->intermediate_pose_.position.z = first_waypoint[2].get<double>() + 0.05;  // 50mm above
+                    control->intermediate_pose_.position.z = current_pose.position.z;
                     
                     // Ensure the orientation is pointing straight down
                     control->intermediate_pose_.orientation.x = 0.0;
@@ -174,7 +197,6 @@ int main(int argc, char * argv[])
                     control->intermediate_pose_.orientation.w = 0.0;
 
                     // Generate a straight line trajectory between the current pose and intermediate pose
-                    geometry_msgs::msg::Pose current_pose = move_group_interface.getCurrentPose().pose; // Fetch current pose
                     std::vector<geometry_msgs::msg::Pose> waypoints = // Compute a linear vector of waypoints between current and intermediate pose
                     control->computeLinearInterpolationPath(current_pose, control->intermediate_pose_, 10); 
                     double jump_threshold = 0.0; // Set jump threshold
@@ -209,17 +231,17 @@ int main(int argc, char * argv[])
             {
                 RCLCPP_INFO(logger, "State: Move to canvas.");
 
-                // control->waitForContinue(); // For debug
+                control->waitForContinue(); // For debug
 
                 // Calculate the average Z position of the canvas
-                double canvas_z = control->calculateAverageCanvasHeight();
+                // double canvas_z = control->calculateAverageCanvasHeight();
+                geometry_msgs::msg::Pose current_pose = move_group_interface.getCurrentPose().pose; // Fetch the current pose
 
                 // Set the target canvas pose
-                control->canvas_pose_ = control->intermediate_pose_; // Set to intermediate pose directly above the first waypoint of next spline
-                control->canvas_pose_.position.z = canvas_z;  // Move to the canvas surface
+                control->canvas_pose_ = current_pose; // Set to intermediate pose directly above the first waypoint of next spline
+                control->canvas_pose_.position.z = control->canvas_z_;  // Move to the canvas surface
 
                 // Generate the straight line trajectory to the canvas
-                geometry_msgs::msg::Pose current_pose = move_group_interface.getCurrentPose().pose; // Fetch the current pose
                 std::vector<geometry_msgs::msg::Pose> waypoints = // Compute a vector of waypoints in a straght line between the current pose and canvas pose
                 control->computeLinearInterpolationPath(current_pose, control->canvas_pose_, 10);
                 double jump_threshold = 0.0; // Set jump threshold to zero
@@ -251,7 +273,9 @@ int main(int argc, char * argv[])
             {
                 RCLCPP_INFO(logger, "State: Move through drawing trajectory.");
 
-                // control->waitForContinue(); // For debug
+                control->waitForContinue(); // For debug
+
+                geometry_msgs::msg::Pose current_pose = move_group_interface.getCurrentPose().pose; // Fetch the current pose
 
                 // Fetch the way points from our spline data memeber
                 std::vector<geometry_msgs::msg::Pose> waypoints;
@@ -260,7 +284,7 @@ int main(int argc, char * argv[])
                     pose.position.x = waypoint[0].get<double>();
                     pose.position.y = waypoint[1].get<double>();
                     // pose.position.z = waypoint[2].get<double>();  // you can add lift here if needed
-                    pose.position.z = control->calculateAverageCanvasHeight();
+                    pose.position.z = current_pose.position.z;
                     pose.orientation.x = 0.0;
                     pose.orientation.y = 1.0;
                     pose.orientation.z = 0.0;
@@ -298,17 +322,15 @@ int main(int argc, char * argv[])
             {
                 RCLCPP_INFO(logger, "State: Move off canvas.");
 
-                // control->waitForContinue(); // For debug
+                control->waitForContinue(); // For debug
 
-                // Get the canvas height
-                double canvas_z = control->calculateAverageCanvasHeight();
+                geometry_msgs::msg::Pose current_pose = move_group_interface.getCurrentPose().pose; // Fetch the current pose
 
                 // Compute the safe lifted pose (100mm above the canvas)
-                geometry_msgs::msg::Pose lifted_pose = move_group_interface.getCurrentPose().pose;
-                lifted_pose.position.z = canvas_z + 0.1;  // Move 100mm up
+                geometry_msgs::msg::Pose lifted_pose = current_pose;
+                lifted_pose.position.z = control->lifted_z_;
 
                 // Generate straight line trajectory directly upwards
-                geometry_msgs::msg::Pose current_pose = move_group_interface.getCurrentPose().pose; // Fetch the current pose
                 std::vector<geometry_msgs::msg::Pose> waypoints = // Compute waypoints of the straight line path between current pose and lifted pose
                 control->computeLinearInterpolationPath(current_pose, lifted_pose, 10);
                 double jump_threshold = 0.0; // Set the jump threshold to a zero
@@ -386,7 +408,7 @@ int main(int argc, char * argv[])
 
                 RCLCPP_INFO(logger, "State: Stop.");
 
-                // control->waitForContinue(); // For debug
+                control->waitForContinue(); // For debug
 
                 RCLCPP_INFO(logger, "Returning home.");
 

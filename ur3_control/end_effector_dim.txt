@@ -1,0 +1,2 @@
+weight = 0.107 kg
+height = 108 mm

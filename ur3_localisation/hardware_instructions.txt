@@ -18,6 +18,9 @@ ifconfig
 ros2 launch ur_robot_driver ur_control.launch.py ur_type:=ur3e robot_ip:=192.168.0.250 launch_rviz:=true
 ros2 launch ur_robot_driver ur_control.launch.py ur_type:=ur3e robot_ip:=192.168.0.192 reverse_ip:=192.168.0.100 launch_rviz:=true
 
+ros2 launch ur_robot_driver ur_control.launch.py ur_type:=ur3e robot_ip:=192.168.0.194 launch_rviz:=true kinematics_config:="/home/jarred/git/DalESelfEBot/ur3_control/calibration/ur3e_calibration_4.yaml"
+
+
 ## Now that you are connected ########################################################################################################
 
 # Run Localisation Node

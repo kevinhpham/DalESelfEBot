@@ -1,0 +1,26 @@
+rosbag2_bagfile_information:
+  version: 5
+  storage_identifier: sqlite3
+  duration:
+    nanoseconds: 6877206754
+  starting_time:
+    nanoseconds_since_epoch: 1744168553949530208
+  message_count: 3436
+  topics_with_message_count:
+    - topic_metadata:
+        name: /joint_states
+        type: sensor_msgs/msg/JointState
+        serialization_format: cdr
+        offered_qos_profiles: "- history: 3\n  depth: 0\n  reliability: 1\n  durability: 1\n  deadline:\n    sec: 9223372036\n    nsec: 854775807\n  lifespan:\n    sec: 9223372036\n    nsec: 854775807\n  liveliness: 1\n  liveliness_lease_duration:\n    sec: 9223372036\n    nsec: 854775807\n  avoid_ros_namespace_conventions: false"
+      message_count: 3436
+  compression_format: ""
+  compression_mode: ""
+  relative_file_paths:
+    - hardware_toolpath_0.db3
+  files:
+    - path: hardware_toolpath_0.db3
+      starting_time:
+        nanoseconds_since_epoch: 1744168553949530208
+      duration:
+        nanoseconds: 6877206754
+      message_count: 3436

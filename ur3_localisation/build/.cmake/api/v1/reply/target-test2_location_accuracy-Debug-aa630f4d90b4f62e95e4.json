@@ -43,21 +43,10 @@
 			[
 				{
 					"fragment" : "-g"
-				}
-			],
-			"defines" : 
-			[
+				},
 				{
 					"backtrace" : 2,
-					"define" : "GTEST_LINKED_AS_SHARED_LIBRARY=1"
-				}
-			],
-			"includes" : 
-			[
-				{
-					"backtrace" : 2,
-					"isSystem" : true,
-					"path" : "/home/jarred/anaconda3/include"
+					"fragment" : "-DGTEST_HAS_PTHREAD=1"
 				}
 			],
 			"language" : "CXX",
@@ -81,12 +70,8 @@
 				"role" : "flags"
 			},
 			{
-				"fragment" : "-Wl,-rpath,/home/jarred/anaconda3/lib",
-				"role" : "libraries"
-			},
-			{
 				"backtrace" : 2,
-				"fragment" : "/home/jarred/anaconda3/lib/libgtest_main.so.1.10.0",
+				"fragment" : "/usr/lib/x86_64-linux-gnu/libgtest_main.a",
 				"role" : "libraries"
 			},
 			{
@@ -95,7 +80,7 @@
 				"role" : "libraries"
 			},
 			{
-				"fragment" : "/home/jarred/anaconda3/lib/libgtest.so.1.10.0",
+				"fragment" : "/usr/lib/x86_64-linux-gnu/libgtest.a",
 				"role" : "libraries"
 			}
 		],

@@ -40,26 +40,38 @@ private:
     // Callback function to save each position as we perform localisation
     void save_position_callback(const std_msgs::msg::Empty::SharedPtr /*msg*/) {
         try {
-            // Save the current position and orientation
-            geometry_msgs::msg::TransformStamped transform_stamped;
-            transform_stamped = tf_buffer_.lookupTransform("base_link", "tool0", tf2::TimePointZero);
-            
-            Eigen::Vector3d position(transform_stamped.transform.translation.x,
-                                     transform_stamped.transform.translation.y,
-                                     transform_stamped.transform.translation.z);
-            Eigen::Quaterniond orientation(transform_stamped.transform.rotation.w,
-                                           transform_stamped.transform.rotation.x,
-                                           transform_stamped.transform.rotation.y,
-                                           transform_stamped.transform.rotation.z);
-            // As we save each position report and publish a visualisation
+            // Get transform from base_link to tool0
+            geometry_msgs::msg::TransformStamped transform_stamped =
+                tf_buffer_.lookupTransform("base_link", "tool0", tf2::TimePointZero);
+    
+            // Convert to Eigen for manipulation
+            Eigen::Vector3d tool_position(transform_stamped.transform.translation.x,
+                                          transform_stamped.transform.translation.y,
+                                          transform_stamped.transform.translation.z);
+    
+            Eigen::Quaterniond tool_orientation(transform_stamped.transform.rotation.w,
+                                                transform_stamped.transform.rotation.x,
+                                                transform_stamped.transform.rotation.y,
+                                                transform_stamped.transform.rotation.z);
+    
+            // Create 108 mm Z offset in the TOOL frame
+            Eigen::Vector3d z_offset_tool(0.0, 0.0, 0.108);  // 108 mm = 0.108 m
+    
+            // Rotate the offset into the base frame
+            Eigen::Vector3d offset_base = tool_orientation * z_offset_tool;
+    
+            // Apply offset in base frame
+            Eigen::Vector3d position_with_offset = tool_position + offset_base;
+    
+            // Save and publish
             if (positions_.size() < 4) {
-                positions_.push_back(position);
-                orientations_.push_back(orientation);
-                publish_marker(position, positions_.size(), 0.0, 0.0, 1.0, 0.05);
-
-                RCLCPP_INFO(this->get_logger(), "Position %ld saved: x=%.3f, y=%.3f, z=%.3f",
-                            positions_.size(), position.x(), position.y(), position.z());
-                // Once we have saved 4 poses we save them all to the yaml and report it and publish the plane visualisation
+                positions_.push_back(position_with_offset);
+                orientations_.push_back(tool_orientation);
+                publish_marker(position_with_offset, positions_.size(), 0.0, 0.0, 1.0, 0.05);
+    
+                RCLCPP_INFO(this->get_logger(), "Position %ld saved (with offset): x=%.3f, y=%.3f, z=%.3f",
+                            positions_.size(), position_with_offset.x(), position_with_offset.y(), position_with_offset.z());
+    
                 if (positions_.size() == 4) {
                     save_positions();
                     publish_plane_marker();
@@ -69,10 +81,10 @@ private:
                 RCLCPP_WARN(this->get_logger(), "All 4 positions have already been saved.");
             }
         }
-        catch (tf2::TransformException &ex) { // Handle error
+        catch (tf2::TransformException &ex) {
             RCLCPP_WARN(this->get_logger(), "Could not transform: %s", ex.what());
         }
-    }
+    }    
 
     // Publishes a sphere marker at each location to confirm the point is consistent with the end effector position in simulation
     void publish_marker(const Eigen::Vector3d &position, int id, double r, double g, double b, double scale) {

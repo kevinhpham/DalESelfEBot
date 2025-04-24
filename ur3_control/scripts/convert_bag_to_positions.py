@@ -10,8 +10,8 @@ import os
 
 # Bag paths
 bag_paths = [
-    "/home/jarred/git/DalESelfEBot/ur3_control/rosbags/sim_toolpath/" # For Simulation
-    # "" # For Hardware
+    # "/home/jarred/git/DalESelfEBot/ur3_control/rosbags/sim_toolpath/" # For Simulation
+    "/home/jarred/git/DalESelfEBot/ur3_control/rosbags/hardware_toolpath" # For Hardware
 ]
 
 # Load UR3e robot model

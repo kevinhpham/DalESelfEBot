@@ -1,1 +1,1 @@
-/usr/bin/c++ -g CMakeFiles/test2_location_accuracy.dir/unit_testing/test2_location_accuracy.cpp.o -o test2_location_accuracy  -Wl,-rpath,/home/jarred/anaconda3/lib /home/jarred/anaconda3/lib/libgtest_main.so.1.10.0 /usr/lib/x86_64-linux-gnu/libyaml-cpp.so.0.7.0 /home/jarred/anaconda3/lib/libgtest.so.1.10.0 
+/usr/bin/c++ -g CMakeFiles/test2_location_accuracy.dir/unit_testing/test2_location_accuracy.cpp.o -o test2_location_accuracy  /usr/lib/x86_64-linux-gnu/libgtest_main.a /usr/lib/x86_64-linux-gnu/libyaml-cpp.so.0.7.0 /usr/lib/x86_64-linux-gnu/libgtest.a 
