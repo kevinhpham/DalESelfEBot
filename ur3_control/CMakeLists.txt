@@ -89,4 +89,4 @@ install(
 )
 
 ament_export_dependencies(rosidl_default_runtime)
-# ament_package()
+ament_package()

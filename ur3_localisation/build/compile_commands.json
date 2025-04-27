@@ -6,12 +6,12 @@
 },
 {
   "directory": "/home/jarred/git/DalESelfEBot/ur3_localisation/build",
-  "command": "/usr/bin/c++ -DGTEST_LINKED_AS_SHARED_LIBRARY=1 -isystem /home/jarred/anaconda3/include -g -o CMakeFiles/test1_four_locations_present.dir/unit_testing/test1_four_locations_present.cpp.o -c /home/jarred/git/DalESelfEBot/ur3_localisation/unit_testing/test1_four_locations_present.cpp",
+  "command": "/usr/bin/c++   -g -DGTEST_HAS_PTHREAD=1 -o CMakeFiles/test1_four_locations_present.dir/unit_testing/test1_four_locations_present.cpp.o -c /home/jarred/git/DalESelfEBot/ur3_localisation/unit_testing/test1_four_locations_present.cpp",
   "file": "/home/jarred/git/DalESelfEBot/ur3_localisation/unit_testing/test1_four_locations_present.cpp"
 },
 {
   "directory": "/home/jarred/git/DalESelfEBot/ur3_localisation/build",
-  "command": "/usr/bin/c++ -DGTEST_LINKED_AS_SHARED_LIBRARY=1 -isystem /home/jarred/anaconda3/include -g -o CMakeFiles/test2_location_accuracy.dir/unit_testing/test2_location_accuracy.cpp.o -c /home/jarred/git/DalESelfEBot/ur3_localisation/unit_testing/test2_location_accuracy.cpp",
+  "command": "/usr/bin/c++   -g -DGTEST_HAS_PTHREAD=1 -o CMakeFiles/test2_location_accuracy.dir/unit_testing/test2_location_accuracy.cpp.o -c /home/jarred/git/DalESelfEBot/ur3_localisation/unit_testing/test2_location_accuracy.cpp",
   "file": "/home/jarred/git/DalESelfEBot/ur3_localisation/unit_testing/test2_location_accuracy.cpp"
 }
 ]

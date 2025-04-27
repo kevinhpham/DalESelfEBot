@@ -21,6 +21,12 @@ ifconfig
 
 ros2 launch ur_robot_driver ur_control.launch.py ur_type:=ur3e robot_ip:=192.168.56.101 launch_rviz:=true kinematics_config:="/home/jarred/git/DalESelfEBot/ur3_control/calibration/docker_ur3e_calibration.yaml"
 
+ros2 launch ur_robot_driver ur_control.launch.py \
+  ur_type:=ur3e \
+  robot_ip:=192.168.56.101 \
+  launch_rviz:=true \
+  kinematics_params_file:=/home/jarred/git/DalESelfEBot/ur3_control/calibration/docker_ur3e_calibration.yaml
+
 ###### ===== Now you are connected ===== #####
 
 # Build Package

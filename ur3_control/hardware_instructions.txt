@@ -5,6 +5,7 @@
 # Ping the Robot IP
 ping 192.168.0.250
 ping 192.168.0.192
+ping 192.168.0.194
 
 # Acquire your computers IP Address
 ifconfig
@@ -15,7 +16,7 @@ ifconfig
 # Turn on the Play Button (Bottom Right Corner)
 
 # Launch the Driver using the Robot IP
-ros2 launch ur_robot_driver ur_control.launch.py ur_type:=ur3e robot_ip:=192.168.0.250 launch_rviz:=true
+ros2 launch ur_robot_driver ur_control.launch.py ur_type:=ur3e robot_ip:=192.168.0.192 launch_rviz:=true kinematics_config:="/home/jarred/git/DalESelfEBot/ur3_control/calibration/ur3e_calibration_2.yaml"
 
 ###### ===== Now you are connected ===== #####
 
@@ -36,3 +37,19 @@ ros2 run ur3_control spline_follower
 # === or === #
 
 ros2 launch ur3_control moveit_stack.launch.py ur_type:=ur3e launch_rviz:=false // Use if we need the kinematics solver set to KDL 
+
+# Publish Continuation message
+
+ros2 topic pub /continue_execution std_msgs/msg/Empty "{}" -1
+
+# Check Controller List
+
+ros2 control list_controllers
+
+# Publish fake toolpath message to test out convar setup
+
+ros2 topic pub /toolpath std_msgs/msg/Empty -1
+
+# Publish shutdown message
+
+ros2 topic pub /shutdown std_msgs/msg/Empty -1

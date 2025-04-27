@@ -32,6 +32,7 @@ public:
     // Declare public member functions for use in the main
     void setSafeStartPose();
     void addGroundPlane();
+    void addCanvasPlane();
     bool loadSplines();
     double calculateAverageCanvasHeight();
     const std::vector<geometry_msgs::msg::Pose> computeLinearInterpolationPath(
@@ -82,11 +83,21 @@ public:
     std::condition_variable continue_cv_;
     bool continue_received_ = false; // Debug flag
 
+    // Canvas and lifted z value members
+    double lifted_z_;
+    double canvas_z_;
+    double tooltip_offset_;
+
+    // Planning interface member for canvas collision avoidance
+    moveit::planning_interface::PlanningSceneInterface planning_scene_interface_;
+
 private:
     void toolpath_sub_callback(const std_msgs::msg::Empty::SharedPtr msg); // Toolpath Callback function
     void process_toolath_to_json(); // Method to process toolpaths to json
     void shutdownCallback(const std_msgs::msg::Empty::SharedPtr msg); // Shutdown sub callback
     void continueCallback(const std_msgs::msg::Empty::SharedPtr msg); // Debug sub callback
+
+    void addInitObstacles(Eigen::Vector3d canvas_center, double canvas_x, double canvas_y);
 
 };
 

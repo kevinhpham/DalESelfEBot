@@ -6,8 +6,13 @@ using namespace std::chrono_literals;
 using json = nlohmann::json;
 
 // Constructor - init member variables: Node name to: spline_follower, state starts in init and initial spline index is 0
-SplineFollower::SplineFollower() : Node("spline_follower"), state_(State::INIT), current_spline_index_(0), flag_received_(false), shutdown_(false) {
+SplineFollower::SplineFollower() : Node("spline_follower"), state_(State::INIT), current_spline_index_(0), flag_received_(false), 
+shutdown_(false), tooltip_offset_(0.108) {
     RCLCPP_INFO(this->get_logger(), "SplineFollower node created.");
+
+    canvas_z_ = calculateAverageCanvasHeight() + tooltip_offset_;
+    // canvas_z_ = calculateAverageCanvasHeight();
+    lifted_z_ = canvas_z_ + 0.05;
 
     // Initalise Publishers and Subscribers for communication with other subsystems
     toolpath_sub_ = this->create_subscription<std_msgs::msg::Empty>("/toolpath", 10, std::bind(&SplineFollower::toolpath_sub_callback, this, std::placeholders::_1));
@@ -32,8 +37,10 @@ void SplineFollower::addGroundPlane() {
 
     // Create a pose for the ground box to be placed at
     geometry_msgs::msg::Pose ground_pose;
-    ground_pose.position.z = -0.01; // Set the z position to 100 mm below 0 (ensures it does not collide with base link)
+    ground_pose.position.z = -0.01; // Set the z position to 100 mm below the canvas z position (ensures it does not collide with base link)
     
+    // std::cout << "Added ground plane at z = " << ground_pose.position.z << std::endl;
+
     // Apply box and pose to the collision object
     ground.primitives.push_back(ground_shape);
     ground.primitive_poses.push_back(ground_pose);
@@ -41,6 +48,149 @@ void SplineFollower::addGroundPlane() {
 
     // Apply collision object to our planning scene
     planning_scene_interface.applyCollisionObject(ground);
+}
+
+// Add in a collision object of the canvas to avoid during the init state
+void SplineFollower::addCanvasPlane() {
+    // Define the YAML file path from localisation package
+    std::string yaml_file = "/home/jarred/git/DalESelfEBot/ur3_localisation/config/params.yaml";
+
+    // Open the YAML file
+    std::ifstream file(yaml_file);
+    if (!file) {
+        RCLCPP_ERROR(this->get_logger(), "Failed to open localization file: %s", yaml_file.c_str());
+        return;
+    }
+
+    // Parse the YAML file
+    YAML::Node config = YAML::Load(file);
+    file.close();
+
+    // Ensure that corner positions exist in the YAML file
+    if (!config["corner_positions"] || config["corner_positions"].size() != 4) {
+        RCLCPP_ERROR(this->get_logger(), "Invalid or missing corner_positions in params.yaml");
+        return;
+    }
+
+    // Extract corner positions
+    std::vector<Eigen::Vector3d> corners;
+    for (const auto& corner : config["corner_positions"]) {
+        double x = corner["x"].as<double>();
+        double y = corner["y"].as<double>();
+        double z = corner["z"].as<double>();
+        corners.emplace_back(x, y, z);
+    }
+
+    // Compute center of canvas
+    Eigen::Vector3d canvas_center(0.0, 0.0, 0.0);
+    for (const auto& pt : corners) {
+        canvas_center += pt;
+    }
+    canvas_center /= 4.0;
+
+    // Compute width (distance between corner 0 and 1) and height (distance between corner 1 and 2)
+    double canvas_width = (corners[0] - corners[1]).norm();  // X-direction
+    double canvas_height = (corners[1] - corners[2]).norm(); // Y-direction
+    
+    // Compute thickness (variation in Z across corners)
+    double min_z = corners[0].z();
+    double max_z = corners[0].z();
+
+    for (const auto& pt : corners) {
+        if (pt.z() < min_z) min_z = pt.z();
+        if (pt.z() > max_z) max_z = pt.z();
+    }
+    double canvas_thickness = max_z - min_z;
+
+    // Output results
+    double canvas_x = canvas_center.x();
+    double canvas_y = canvas_center.y();
+    double canvas_z = 0.0;
+
+    RCLCPP_INFO(this->get_logger(), "Canvas center: (%.4f, %.4f, %.4f)", canvas_x, canvas_y, canvas_z);
+    RCLCPP_INFO(this->get_logger(), "Canvas size: %.4f m wide, %.4f m tall", canvas_width, canvas_height);
+
+    // Add in the init obstacles based on the canvas center, width and height
+    addInitObstacles(canvas_center, canvas_width, canvas_height);
+
+    // Declare a planning scene and collision object for the canvas object
+    moveit_msgs::msg::CollisionObject canvas;
+    canvas.header.frame_id = "world"; // Set frame id to world frame
+    canvas.id = "canvas_plane"; // Name our collision object canvas_plane
+
+    // Create a box geometry to be our ground
+    shape_msgs::msg::SolidPrimitive canvas_shape;
+    canvas_shape.type = shape_msgs::msg::SolidPrimitive::BOX; // Set the shape to box
+    canvas_shape.dimensions = {canvas_width, canvas_height, canvas_thickness}; // Define the dimensions
+
+    // Create a pose for the ground box to be placed at
+    geometry_msgs::msg::Pose canvas_pose;
+    canvas_pose.position.x = canvas_x;
+    canvas_pose.position.y = canvas_y;
+    canvas_pose.position.z = canvas_z;
+
+    // Apply box and pose to the collision object
+    canvas.primitives.push_back(canvas_shape);
+    canvas.primitive_poses.push_back(canvas_pose);
+    canvas.operation = canvas.ADD;
+
+    // Apply collision object to our planning scene
+    planning_scene_interface_.applyCollisionObject(canvas);
+}
+
+// Add in some initialisation obstacles to ensure the pen does not collide with anything during init state
+void SplineFollower::addInitObstacles(Eigen::Vector3d canvas_center, double canvas_x, double canvas_y) {
+    double height = 0.111; // Set obstacle height as end-effector length
+    double thickness_back = 0.05; // Thickness of the back obstacle box
+    double thickness = 0.3; // Thickness of the other obstacle boxes
+
+    // Common shape type
+    shape_msgs::msg::SolidPrimitive box;
+    box.type = shape_msgs::msg::SolidPrimitive::BOX;
+    
+    // Create four obstacles
+    std::vector<moveit_msgs::msg::CollisionObject> obstacles;
+    std::vector<std::string> ids = {"obstacle_behind", "obstacle_front", "obstacle_left", "obstacle_right"};
+
+    for (int i = 0; i < 4; ++i) {
+        moveit_msgs::msg::CollisionObject obj;
+        obj.header.frame_id = "world";
+        obj.id = ids[i];
+
+        shape_msgs::msg::SolidPrimitive shape = box;
+        geometry_msgs::msg::Pose pose;
+
+        if (i == 0) { // Behind canvas (negative y)
+            shape.dimensions = {canvas_x, thickness_back, height};
+            pose.position.x = canvas_center.x();
+            pose.position.y = canvas_center.y() - (canvas_y / 2.0) - (thickness_back / 2.0);
+        } else if (i == 1) { // Front of canvas (positive y)
+            shape.dimensions = {canvas_x, thickness, height};
+            pose.position.x = canvas_center.x();
+            pose.position.y = canvas_center.y() + (canvas_y / 2.0) + (thickness / 2.0);
+        } else if (i == 2) { // Left of canvas (negative x)
+            shape.dimensions = {thickness, canvas_y + thickness, height};
+            pose.position.x = canvas_center.x() - (canvas_x / 2.0) - (thickness / 2.0);
+            pose.position.y = canvas_center.y();
+        } else if (i == 3) { // Right of canvas (positive x)
+            shape.dimensions = {thickness, canvas_y + thickness, height};
+            pose.position.x = canvas_center.x() + (canvas_x / 2.0) + (thickness / 2.0);
+            pose.position.y = canvas_center.y();
+        }
+
+        // pose.position.z = canvas_center.z() + height / 2.0;
+        pose.position.z = 0.0;
+        pose.orientation.w = 1.0;
+
+        obj.primitives.push_back(shape);
+        obj.primitive_poses.push_back(pose);
+        obj.operation = obj.ADD;
+
+        obstacles.push_back(obj);
+    }
+
+    // Apply all obstacles to the planning scene
+    planning_scene_interface_.applyCollisionObjects(obstacles);
 }
 
 // Load the testing splines from a json file
@@ -86,7 +236,7 @@ void SplineFollower::setSafeStartPose() {
 
     safe_start_pose_.position.x = x_sum / 4.0;
     safe_start_pose_.position.y = y_sum / 4.0;
-    safe_start_pose_.position.z = 0.1;  // 100mm above workspace
+    safe_start_pose_.position.z = lifted_z_;
 
     // Orientation facing downward (Quaternion for downward orientation)
     safe_start_pose_.orientation.x = 0.0;
@@ -157,7 +307,11 @@ double SplineFollower::calculateAverageCanvasHeight() {
         count++;
     }
 
-    return (count > 0) ? (total_z / count) : 0.05;  // Return the average of the aggregate - Default to 50mm if something goes wrong
+    double reduction = 0.003; // Reduce z value by 3 mm
+
+    std::cout << "Average canvas height = " << total_z / count - reduction << std::endl;
+
+    return (count > 0) ? (total_z / count - reduction) : 0.05;  // Return the average of the aggregate - Default to 50mm if something goes wrong
 }
 
 void SplineFollower::toolpath_sub_callback(const std_msgs::msg::Empty::SharedPtr msg){

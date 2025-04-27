@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Site BuildName="(empty)"
+	BuildStamp="20250418-0133-Experimental"
+	Name="jarred-GF62-7RD"
+	Generator="ctest-3.22.1"
+	CompilerName="/usr/bin/c++"
+	CompilerVersion="11.4.0"
+	OSName="Linux"
+	Hostname="jarred-GF62-7RD"
+	OSRelease="6.8.0-57-generic"
+	OSVersion="#59~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Wed Mar 19 17:07:41 UTC 2"
+	OSPlatform="x86_64"
+	Is64Bits="1"
+	VendorString="GenuineIntel"
+	VendorID="Intel Corporation"
+	FamilyID="6"
+	ModelID="158"
+	ProcessorCacheSize="6144"
+	NumberOfLogicalCPU="8"
+	NumberOfPhysicalCPU="4"
+	TotalVirtualMemory="2047"
+	TotalPhysicalMemory="15911"
+	LogicalProcessorsPerPhysical="2"
+	ProcessorClockFrequency="3412.68"
+	>
+	<Testing>
+		<StartDateTime>Apr 18 11:33 AEST</StartDateTime>
+		<StartTestTime>1744940032</StartTestTime>
+		<TestList/>
+		<EndDateTime>Apr 18 11:33 AEST</EndDateTime>
+		<EndTestTime>1744940032</EndTestTime>
+		<ElapsedMinutes>0</ElapsedMinutes>
+	</Testing>
+</Site>
