@@ -8,7 +8,6 @@ from rclpy.action import ActionServer
 from img_prc_interface.action import Img  # Import action definition, change this during integration
 from rembg import remove
 from PIL import Image as PILImage
-import io
 
 def edge_detection_color(image,lower,upper):
     # Split the image into its color channels
