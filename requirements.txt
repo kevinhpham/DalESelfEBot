@@ -1,0 +1,22 @@
+# Python dependencies for DalESelfEBot GUI and Image Processing
+
+# For ROS 2 interaction (often provided by ROS sourcing, but good to list)
+# rclpy
+# sensor_msgs
+# std_msgs
+
+# Image processing dependencies
+Pillow>=9.0.0     # For PIL used by rembg and Tkinter GUI
+rembg>=2.0.0      # Background removal library
+onnxruntime>=1.10.0 # Dependency for rembg
+
+# Specific version needed for ROS 2 Humble compatibility
+numpy<2.0,>=1.21.0 # Compatible with ROS Humble and rembg/onnxruntime
+
+# Note: opencv-python is NOT listed here as we rely on the version
+# provided by the ROS 2 Humble installation (ros-humble-cv-bridge, etc.)
+# to avoid conflicts.
+
+# Add any other pure Python dependencies needed by your GUI or other nodes below:
+# example-package==1.2.3
+
