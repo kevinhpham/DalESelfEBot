@@ -34,14 +34,14 @@ def clarify(image, alpha=1.2, beta=50):
     return brightened
 
 class ImageProcessor(Node):
-    def __init__(self):
+    def __init__(self,camera_index):
         self.window_width = 500
         self.window_height = 500
         super().__init__('image_processor')
         self.edge_publisher_ = self.create_publisher(Image, 'edge_image', 10)
         self.cam_publisher = self.create_publisher(Image, 'webcam_image', 10)
         self.bridge = CvBridge()
-        self.cap = cv2.VideoCapture(0)
+        self.cap = cv2.VideoCapture(camera_index)
         self.timer = self.create_timer(0.1, self.timer_callback)
         self._action_server = ActionServer(self, Img, 'process_edge_image', self.process_image_callback)
 
@@ -121,7 +121,8 @@ class ImageProcessor(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    image_processor = ImageProcessor()
+    camera_index = int(sys.argv[1]) if len(sys.argv) > 1 else 0
+    image_processor = ImageProcessor(camera_index)
     rclpy.spin(image_processor)
     image_processor.destroy_node()
     rclpy.shutdown()
