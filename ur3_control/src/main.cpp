@@ -49,8 +49,9 @@ int main(int argc, char * argv[])
     control->loadSplines();
 
     // Generate border - Placed at the start of the queue
-    double offset = 0.05; // 5 cm offset
-    if(!control->generateBorderSpline(offset)) RCLCPP_ERROR(logger, "Failed to generate border.");
+    double x_offset = 0.07375; // x offset
+    double y_offset = 0.0525; // y offset
+    if(!control->generateBorderSpline(x_offset, y_offset)) RCLCPP_ERROR(logger, "Failed to generate border.");
 
     // Generate signature - Placed at the end of the queue
     // if(!control->generateSignageSpline()) RCLCPP_ERROR(logger, "Failed to generate signature");
@@ -92,7 +93,7 @@ int main(int argc, char * argv[])
 
                 control->addCanvasPlane(); // Add in the canvas collision object
 
-                control->waitForContinue(); // For debug
+                // control->waitForContinue(); // For debug
 
                 // Set the safe start pose: saved to control->safe_start_pose_
                 control->setSafeStartPose();
@@ -173,7 +174,7 @@ int main(int argc, char * argv[])
             {
                 RCLCPP_INFO(logger, "State: Move to intermediate pos.");
 
-                control->waitForContinue(); // For debug
+                // control->waitForContinue(); // For debug
 
                 // Ensure we have a next spline to move to
                 if (control->current_spline_index_ < control->spline_data_["splines"].size()) {
@@ -231,7 +232,7 @@ int main(int argc, char * argv[])
             {
                 RCLCPP_INFO(logger, "State: Move to canvas.");
 
-                control->waitForContinue(); // For debug
+                // control->waitForContinue(); // For debug
 
                 // Calculate the average Z position of the canvas
                 // double canvas_z = control->calculateAverageCanvasHeight();
@@ -273,7 +274,7 @@ int main(int argc, char * argv[])
             {
                 RCLCPP_INFO(logger, "State: Move through drawing trajectory.");
 
-                control->waitForContinue(); // For debug
+                // control->waitForContinue(); // For debug
 
                 geometry_msgs::msg::Pose current_pose = move_group_interface.getCurrentPose().pose; // Fetch the current pose
 
@@ -322,7 +323,7 @@ int main(int argc, char * argv[])
             {
                 RCLCPP_INFO(logger, "State: Move off canvas.");
 
-                control->waitForContinue(); // For debug
+                // control->waitForContinue(); // For debug
 
                 geometry_msgs::msg::Pose current_pose = move_group_interface.getCurrentPose().pose; // Fetch the current pose
 
@@ -384,7 +385,7 @@ int main(int argc, char * argv[])
                     RCLCPP_INFO(logger, "Recived new drawing.");
                     // Generate border - Placed at the start of the queue
                     double offset = 0.05; // 5 cm offset
-                    if(!control->generateBorderSpline(offset)) RCLCPP_ERROR(logger, "Failed to generate border.");
+                    if(!control->generateBorderSpline(x_offset, y_offset)) RCLCPP_ERROR(logger, "Failed to generate border.");
 
                     // Generate signature - Placed at the end of the queue
                     // if(!control->generateSignageSpline()) RCLCPP_ERROR(logger, "Failed to generate signature");

@@ -195,7 +195,7 @@ void SplineFollower::addInitObstacles(Eigen::Vector3d canvas_center, double canv
 
 // Load the testing splines from a json file
 bool SplineFollower::loadSplines() {
-    std::ifstream file("/home/jarred/git/DalESelfEBot/ur3_control/config/circle_waypoints.json");
+    std::ifstream file("/home/jarred/git/DalESelfEBot/ur3_control/config/smiley_waypoints.json");
     if (!file) {
         RCLCPP_ERROR(this->get_logger(), "Could not open spline JSON file.");
         return false;
@@ -307,7 +307,8 @@ double SplineFollower::calculateAverageCanvasHeight() {
         count++;
     }
 
-    double reduction = 0.003; // Reduce z value by 3 mm
+    // double reduction = 0.003; // Reduce z value by 3 mm
+    double reduction = 0.0;
 
     std::cout << "Average canvas height = " << total_z / count - reduction << std::endl;
 
@@ -343,15 +344,13 @@ void SplineFollower::sendError(bool drawing_incomplete) {
 }
 
 // Function to generate a border spline and place it at position 0 to be drawn first
-bool SplineFollower::generateBorderSpline(double offset) { // Offset in metres
-    // Load the YAML file with corner positions
+bool SplineFollower::generateBorderSpline(double x_offset, double y_offset) {
     YAML::Node config = YAML::LoadFile("/home/jarred/git/DalESelfEBot/ur3_localisation/config/params.yaml");
     if (!config["corner_positions"] || config["corner_positions"].size() != 4) {
         RCLCPP_ERROR(this->get_logger(), "Invalid or missing corner_positions in YAML.");
         return false;
     }
 
-    // Extract corners
     std::vector<std::array<double, 3>> corners;
     for (const auto& corner : config["corner_positions"]) {
         double x = corner["x"].as<double>();
@@ -365,7 +364,6 @@ bool SplineFollower::generateBorderSpline(double offset) { // Offset in metres
         return false;
     }
 
-    // Detect winding order
     double signed_area = 0.0;
     for (int i = 0; i < 4; ++i) {
         const auto& p1 = corners[i];
@@ -375,14 +373,12 @@ bool SplineFollower::generateBorderSpline(double offset) { // Offset in metres
     bool is_clockwise = signed_area < 0;
     double sign = is_clockwise ? -1.0 : 1.0;
 
-    // Compute offset corners using average normals
     std::vector<std::array<double, 3>> offset_corners;
     for (size_t i = 0; i < 4; ++i) {
         const auto& prev = corners[(i + 3) % 4];
         const auto& curr = corners[i];
         const auto& next = corners[(i + 1) % 4];
 
-        // Vectors for adjacent edges
         double dx1 = curr[0] - prev[0];
         double dy1 = curr[1] - prev[1];
         double len1 = std::hypot(dx1, dy1);
@@ -395,13 +391,11 @@ bool SplineFollower::generateBorderSpline(double offset) { // Offset in metres
         dx2 /= len2;
         dy2 /= len2;
 
-        // Normals for each edge
         double nx1 = -dy1;
         double ny1 = dx1;
         double nx2 = -dy2;
         double ny2 = dx2;
 
-        // Average normal
         double nx = nx1 + nx2;
         double ny = ny1 + ny2;
         double norm_len = std::hypot(nx, ny);
@@ -410,13 +404,13 @@ bool SplineFollower::generateBorderSpline(double offset) { // Offset in metres
             ny /= norm_len;
         }
 
-        double x = curr[0] + sign * nx * offset;
-        double y = curr[1] + sign * ny * offset;
+        // Apply x and y offset along the average normal
+        double x = curr[0] + sign * (nx * x_offset);
+        double y = curr[1] + sign * (ny * y_offset);
         double z = curr[2];
         offset_corners.push_back({x, y, z});
     }
 
-    // Generate interpolated points between offset corners
     std::vector<std::vector<double>> border_waypoints;
     for (size_t i = 0; i < 4; ++i) {
         const auto& p1 = offset_corners[i];
@@ -436,10 +430,8 @@ bool SplineFollower::generateBorderSpline(double offset) { // Offset in metres
         }
     }
 
-    // Close the loop
     border_waypoints.push_back(border_waypoints.front());
 
-    // Create border spline JSON
     nlohmann::json border_spline;
     border_spline["id"] = 0;
     border_spline["waypoints"] = border_waypoints;
@@ -453,7 +445,7 @@ bool SplineFollower::generateBorderSpline(double offset) { // Offset in metres
     }
 
     spline_data_["splines"].insert(spline_data_["splines"].begin(), border_spline);
-    RCLCPP_INFO(this->get_logger(), "Border spline generated and inserted at index 0.");
+    RCLCPP_INFO(this->get_logger(), "Border spline generated with x/y offset and inserted at index 0.");
     return true;
 }
 
