@@ -93,7 +93,7 @@ int main(int argc, char * argv[])
 
                 control->addCanvasPlane(); // Add in the canvas collision object
 
-                // control->waitForContinue(); // For debug
+                control->waitForContinue(); // For debug
 
                 // Set the safe start pose: saved to control->safe_start_pose_
                 control->setSafeStartPose();

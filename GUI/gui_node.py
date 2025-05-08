@@ -21,6 +21,7 @@ import os
 import traceback
 import yaml # For Set Robot IP
 
+## Setup Image Processor Action Client ##
 # Try to import the action definition
 try:
     from img_prc_interface.action import Img
@@ -59,7 +60,7 @@ class GuiNode(Node):
 
         script_dir = os.path.dirname(os.path.abspath(__file__))
         project_main_folder = os.path.dirname(script_dir)
-        self.params_file_path = os.path.join(project_main_folder, "parameters.yaml")
+        self.params_file_path = os.path.join(project_main_folder, "/home/jarred/git/DalESelfEBot/GUI/params.yaml")
         self.get_logger().info(f"Parameters YAML file path set to: {self.params_file_path}")
 
         self.pixel_map_publisher = self.create_publisher(Image, '/pixel_map', 10)
@@ -82,6 +83,7 @@ class GuiNode(Node):
             self._action_client = None
             self.get_logger().error("Img action type not available. Action client NOT created.")
 
+    ## ------- Image Processor Section --------- ##
     def webcam_callback(self, msg):
         try:
             cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
@@ -277,19 +279,20 @@ class GuiNode(Node):
         if self.robot_calibration_process and self.robot_calibration_process.poll() is None:
             self.get_logger().warn("Robot calibration launch file might already be running.")
             return False, "Robot calibration might already be running."
-        target_file = "/home/jarred/git/DalESelfEBot/ur3_control/calibration/ur3e_calibration_1.yaml" # Example path
-        if not os.path.exists(target_file):
-             self.get_logger().error(f"Calibration target file not found: {target_file}")
-             return False, f"Calibration target file not found: {target_file}"
 
-        robot_ip_calib, _ = self.get_robot_ip_from_yaml()
-        if not robot_ip_calib:
-            robot_ip_calib = "192.168.0.191"
-            self.get_logger().warn(f"Robot IP for calibration not found in YAML, using fallback: {robot_ip_calib}")
+        target_file = "calibration.yaml"
+        if not os.path.exists(target_file):
+            self.get_logger().error(f"Calibration target file not found: {target_file}")
+            return False, f"Calibration target file not found: {target_file}"
+
+        robot_ip, ur_type, msg = self.get_robot_info_from_yaml()
+        if not robot_ip:
+            robot_ip = "192.168.0.190"  # Fallback IP
+            self.get_logger().warn(f"Robot IP for calibration not found in YAML, using fallback: {robot_ip}")
 
         command = [
             'ros2', 'launch', 'ur_calibration', 'calibration_correction.launch.py',
-            f'robot_ip:={robot_ip_calib}',
+            f'robot_ip:={robot_ip}',
             f'target_filename:={target_file}'
         ]
         try:
@@ -306,40 +309,27 @@ class GuiNode(Node):
             self.robot_calibration_process = None
             return False, f"Failed to launch calibration: {e}"
 
-    def get_robot_ip_from_yaml(self):
+    def get_robot_info_from_yaml(self):
         try:
-            if not os.path.exists(self.params_file_path):
-                self.get_logger().error(f"Parameters file not found: {self.params_file_path}")
-                return None, "Parameters file not found."
-            with open(self.params_file_path, 'r') as f:
-                data = yaml.safe_load(f)
-                if data and isinstance(data.get('robot'), dict) and 'ip_address' in data['robot']:
-                    ip = str(data['robot']['ip_address'])
-                    self.get_logger().info(f"Retrieved robot IP: {ip} from {self.params_file_path}")
-                    return ip, "IP retrieved successfully."
-                else:
-                    self.get_logger().warn(f"Robot IP address not found or invalid format in {self.params_file_path} under robot.ip_address")
-                    return None, "Robot IP not found or invalid in parameters file."
-        except yaml.YAMLError as e:
-            self.get_logger().error(f"Error parsing YAML {self.params_file_path}: {e}")
-            return None, f"Error parsing parameters file: {e}"
+            with open("params.yaml", "r") as file:  # Replace with actual path
+                config = yaml.safe_load(file)
+            robot_ip = config["robot"]["ip_address"]
+            ur_type = config["robot"]["ur_type"]
+            return robot_ip, ur_type, ""
         except Exception as e:
-            self.get_logger().error(f"Failed to read IP from YAML: {e}\n{traceback.format_exc()}")
-            return None, f"Unexpected error reading IP: {e}"
+            return None, None, str(e)
 
     def launch_ur_system(self):
         if self.ur_system_process and self.ur_system_process.poll() is None:
             self.get_logger().warn("UR system (ur_control.launch.py) might already be running.")
             return False, "UR system might already be running."
 
-        robot_ip, msg = self.get_robot_ip_from_yaml()
-        if not robot_ip:
+        robot_ip, ur_type, msg = self.get_robot_info_from_yaml()
+        if not robot_ip or not ur_type:
             self.get_logger().error(f"Cannot launch UR system: {msg}")
-            return False, f"Failed to get Robot IP for UR system: {msg}"
+            return False, f"Failed to get robot info: {msg}"
 
-        # USER ACTION REQUIRED: Verify and update this kinematics_config path
-        kinematics_config_path = "/home/jarred/git/DalESelfEBot/ur_configs/ur3e_kinematics.yaml"
-
+        kinematics_config_path = "calibration.yaml"
         if not os.path.exists(kinematics_config_path):
             err_msg = f"Kinematics config file not found: {kinematics_config_path}. Please update the path in the script (GuiNode.launch_ur_system)."
             self.get_logger().error(err_msg)
@@ -347,7 +337,7 @@ class GuiNode(Node):
 
         command = [
             'ros2', 'launch', 'ur_robot_driver', 'ur_control.launch.py',
-            'ur_type:=ur3e',
+            f'ur_type:={ur_type}',
             f'robot_ip:={robot_ip}',
             'launch_rviz:=true',
             f'kinematics_config:={kinematics_config_path}'
@@ -366,7 +356,6 @@ class GuiNode(Node):
             self.get_logger().error(f"Failed to launch UR system: {e}\n{traceback.format_exc()}")
             self.ur_system_process = None
             return False, f"Failed to launch UR system: {e}"
-
 
     def launch_dale_integration(self):
         if self.dale_integration_process and self.dale_integration_process.poll() is None:
