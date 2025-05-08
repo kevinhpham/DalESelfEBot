@@ -4,11 +4,22 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
 from launch_ros.actions import Node
+import os
+import yaml
 
 def generate_launch_description():
-    return LaunchDescription([
-        # --- Launch external launch files ---
+    # Path to the YAML configuration file
+    config_path = '/home/jarred/git/DalESelfEBot/GUI/params.yaml'  # Update this path accordingly
 
+    # Load the YAML file
+    try:
+        with open(config_path, 'r') as file:
+            config = yaml.safe_load(file)
+            ur_type = config['robot']['ur_type']
+    except Exception as e:
+        raise RuntimeError(f"Failed to load 'ur_type' from YAML: {e}")
+
+    return LaunchDescription([
         # Motion Planning (MoveIt config)
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource([
@@ -18,7 +29,7 @@ def generate_launch_description():
                     'ur_moveit.launch.py'
                 ])
             ]),
-            launch_arguments={'ur_type': 'ur3e', 'launch_rviz': 'false'}.items()
+            launch_arguments={'ur_type': ur_type, 'launch_rviz': 'false'}.items()
         ),
 
         # Motion Execution (Control stack)
@@ -30,38 +41,16 @@ def generate_launch_description():
                     'moveit_stack.launch.py'
                 ])
             ]),
-            launch_arguments={'ur_type': 'ur3e', 'launch_rviz': 'false'}.items()
+            launch_arguments={'ur_type': ur_type, 'launch_rviz': 'false'}.items()
         ),
 
-        # Image Processing Launch File - TO BE ADDED
-        # IncludeLaunchDescription(
-        #     PythonLaunchDescriptionSource([
-        #         PathJoinSubstitution([
-        #             FindPackageShare('img_prc'),
-        #             'launch',
-        #             'img_prc.launch.py'
-        #         ])
-        #     ])
-        # ),
+        # Image Processing Node
+        Node(
+            package='img_prc',
+            executable='image_processor',
+            name='image_processor',
+            output='screen'
+        ),
 
-        # Tool Path Planner Launch File - TO BE ADDED
-        # IncludeLaunchDescription(
-        #     PythonLaunchDescriptionSource([
-        #         PathJoinSubstitution([
-        #             FindPackageShare('tool_path_planning'),
-        #             'launch',
-        #             'tool_path.launch.py'
-        #         ])
-        #     ])
-        # ),
-
-        # --- Direct node example (uncomment and configure as needed) ---
-
-        # Node(
-        #     package='your_package',
-        #     executable='your_node_executable',
-        #     name='your_node_name',
-        #     output='screen',
-        #     parameters=[{'example_param': 'value'}]
-        # ),
+        # Additional nodes or launch files can be added here
     ])

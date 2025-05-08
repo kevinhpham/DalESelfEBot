@@ -40,7 +40,7 @@ public:
             const geometry_msgs::msg::Pose& end_pose, 
             int num_waypoints);
     void sendError(bool drawing_incomplete); // Function to publish error message to GUI
-    bool generateBorderSpline(double offset); // Generates a border spline
+    bool generateBorderSpline(double x_offset, double y_offset); // Generates a border spline
     bool generateSignageSpline();
     void exportSplineToCSV(const std::string& filename);
     void waitForContinue(); // Wait function for async debugging

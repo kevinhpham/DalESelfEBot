@@ -9,6 +9,7 @@ from img_prc_interface.action import Img  # Import action definition
 from rembg import remove
 from PIL import Image as PILImage
 import os  # [NEW] for cascade path checking
+import sys
 
 def edge_detection_color(image, lower, upper):
     b_channel, g_channel, r_channel = cv2.split(image)
